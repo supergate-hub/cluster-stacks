@@ -78,7 +78,7 @@ patches:
         value: default
       - op: replace
         path: /data/slurm.key
-        value: xY7APc8s1W5O3LAk5PPKTgdwPHefwbc7uHktUh5aqLWHv4Tnyu+Sj+Px1f1KMLAdKcG5r6b9ArZ8LCcFEZ2yEg==
+        value: jXel5T5W3tEfDAw4ell0hgww/iarqYgzWrBmhkLjpbNqc9RhK7h5T8gL0O1HeynJPsbJpwPhMi6psYoFO5Rpcw==
 
   - target:
       kind: Secret
@@ -89,4 +89,4 @@ patches:
         value: default
       - op: replace
         path: /data/jwt.key
-        value: 6eJs+0niZGiYTaAjlRrGRoxCTlhS8lUz1wa9bhrHEQo=
+        value: Ff1HG5BTryIglLUBIlvd3g0WfcHEyRtU5XqYWOOW8hw=
