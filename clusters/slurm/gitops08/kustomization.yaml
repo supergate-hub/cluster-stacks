@@ -1,0 +1,92 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/slurm-cluster
+
+patches:
+  - target:
+      kind: Namespace
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-gitops08
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: gitops08
+
+  - target:
+      kind: Controller
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: gitops08
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-gitops08
+      - op: replace
+        path: /spec/clusterName
+        value: gitops08
+
+  - target:
+      kind: NodeSet
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: gitops08-workers
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-gitops08
+      - op: replace
+        path: /spec/controllerRef/name
+        value: gitops08
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-gitops08
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/slurmd/resources/limits/cpu
+        value: "4"
+      - op: replace
+        path: /spec/slurmd/resources/limits/memory
+        value: 8Gi
+
+  - target:
+      kind: RestApi
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: gitops08
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-gitops08
+      - op: replace
+        path: /spec/controllerRef/name
+        value: gitops08
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-gitops08
+
+  - target:
+      kind: Secret
+      name: slurm-auth-slurm
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-gitops08
+      - op: replace
+        path: /data/slurm.key
+        value: mzVyFJSUGUYEPJ5vrsHeHebSqu0JobeDIIvvr8e9IhnMsDt9MfEEpyi85o6zA4OysPMBiehqIMWLgdDLOkKxqg==
+
+  - target:
+      kind: Secret
+      name: slurm-auth-jwt
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-gitops08
+      - op: replace
+        path: /data/jwt.key
+        value: ufXEb/oHbxCKU3N6zk+DGvbevOgQWiPSpGX6qAjmJXE=
