@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-slurm-sssd-conf
+  namespace: slurm-my-slurm
+type: Opaque
+data:
+  sssd.conf: W3Nzc2RdCmNvbmZpZ19maWxlX3ZlcnNpb24gPSAyCnNlcnZpY2VzID0gbnNzLCBwYW0KZG9tYWlucyA9IEZJTEVTCgpbbnNzXQpmaWx0ZXJfdXNlcnMgPSByb290CmZpbHRlcl9ncm91cHMgPSByb290CgpbcGFtXQoKW2RvbWFpbi9GSUxFU10KaWRfcHJvdmlkZXIgPSBmaWxlcwplbnVtZXJhdGUgPSB0cnVlCg==
+---
+apiVersion: slinky.slurm.net/v1beta1
+kind: LoginSet
+metadata:
+  name: my-slurm-login
+  namespace: slurm-my-slurm
+spec:
+  controllerRef:
+    name: my-slurm
+    namespace: slurm-my-slurm
+  replicas: 1
+  sssdConfRef:
+    name: my-slurm-sssd-conf
+    key: sssd.conf
+  rootSshAuthorizedKeys: |-
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCeqqbkuqu1fLg0BoMEFHcSysuoQn4qm7TVMoGqGAhfI2NBwTOoDniXvl0alRjLU4MzFgPRf0B2p0dw3/0okkwJ3XHZOXRFSv1zW65JuBw3Nf5aJOUwnIvDCSe9HtFV/NfvJkH7PncNWdizCJlHwawM8DOzWAMOBX0PaHlRr7KshDDvsx/r7qonSRvV5AxhgzY1p3mttq6n2gUmYgG/wMyerEBcpu8d4u0GFVcPrGK0rwnmKCmsNhtWS75ykF14CGIjWqzlQnUPVsZbCxyB+2pr+uxviBUZl5Djt9uddB03AQut3C6rA5yg5Xqo1Ak7Wu/TXrBcfezmZzRwUiN1CwVSwNERAiKZvWsE3PgtRjkNLvIlR3NWOi47/+xTwL5iDRvq8/hyiivjq1L88UkVpBkT3AN/xtvB6WDSrDN0XNGx2rRZdWQzI6D6z2PFR9MJ36IpdBMbKS6b2RZotdBoJiBi6yNXd+pyJhjecknFEQojq7QlG98V54sxPhQlS/hKU2s= jh.byun@supergate.cc
+  service:
+    type: ClusterIP
