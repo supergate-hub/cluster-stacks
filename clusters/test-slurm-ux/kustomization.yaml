@@ -1,0 +1,145 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base/tenant-infra
+
+patches:
+  - target:
+      kind: Namespace
+      name: NAMESPACE
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-test-slurm-ux
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: test-slurm-ux
+
+  - target:
+      kind: KamajiControlPlane
+      name: CLUSTER_NAME-control-plane
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: test-slurm-ux-control-plane
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-slurm-ux
+      - op: replace
+        path: /spec/version
+        value: "v1.30.0"
+      - op: replace
+        path: /spec/network/certSANs/0
+        value: test-slurm-ux.k8s.launcher.internal
+
+  - target:
+      kind: Cluster
+      name: CLUSTER_NAME
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: test-slurm-ux
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-slurm-ux
+      - op: replace
+        path: /spec/controlPlaneRef/name
+        value: test-slurm-ux-control-plane
+      - op: replace
+        path: /spec/infrastructureRef/name
+        value: test-slurm-ux
+
+  - target:
+      kind: OpenStackCluster
+      name: CLUSTER_NAME
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: test-slurm-ux
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-slurm-ux
+      - op: replace
+        path: /spec/identityRef/name
+        value: cloud-config
+      - op: replace
+        path: /spec/identityRef/cloudName
+        value: capi-test
+      - op: replace
+        path: /spec/externalNetwork/id
+        value: fea71d83-27da-4636-9a8b-842f93bcaccf
+
+  - target:
+      kind: OpenStackMachineTemplate
+      name: CLUSTER_NAME-worker-mt
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: test-slurm-ux-worker-mt
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-slurm-ux
+      - op: replace
+        path: /spec/template/spec/flavor
+        value: a4v2
+      - op: replace
+        path: /spec/template/spec/image/filter/name
+        value: ubuntu-2404-kube-v1.30.0
+      - op: replace
+        path: /spec/template/spec/sshKeyName
+        value: capi-test
+      - op: replace
+        path: /spec/template/spec/identityRef/name
+        value: cloud-config
+      - op: replace
+        path: /spec/template/spec/identityRef/cloudName
+        value: capi-test
+
+  - target:
+      kind: KubeadmConfigTemplate
+      name: CLUSTER_NAME-worker-config
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: test-slurm-ux-worker-config
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-slurm-ux
+
+  - target:
+      kind: MachineDeployment
+      name: CLUSTER_NAME-md-0
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: test-slurm-ux-md-0
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-slurm-ux
+      - op: replace
+        path: /spec/clusterName
+        value: test-slurm-ux
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/clusterName
+        value: test-slurm-ux
+      - op: replace
+        path: /spec/template/spec/version
+        value: v1.30.0
+      - op: replace
+        path: /spec/template/spec/bootstrap/configRef/name
+        value: test-slurm-ux-worker-config
+      - op: replace
+        path: /spec/template/spec/infrastructureRef/name
+        value: test-slurm-ux-worker-mt
+
+  - target:
+      kind: ClusterResourceSet
+      name: cilium-cni
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-slurm-ux
