@@ -1,0 +1,96 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/slurm-cluster
+  # login.yaml is rendered alongside kustomization.yaml — it adds the
+  # LoginSet CR and its sssd-conf Secret that the upstream base chart
+  # doesn't ship. Without it the cluster has no SSH entry point.
+  - ./login.yaml
+
+patches:
+  - target:
+      kind: Namespace
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-delorder-test
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: delorder-test
+
+  - target:
+      kind: Controller
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: delorder-test
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-delorder-test
+      - op: replace
+        path: /spec/clusterName
+        value: delorder-test
+
+  - target:
+      kind: NodeSet
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: delorder-test-workers
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-delorder-test
+      - op: replace
+        path: /spec/controllerRef/name
+        value: delorder-test
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-delorder-test
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/slurmd/resources/limits/cpu
+        value: "3"
+      - op: replace
+        path: /spec/slurmd/resources/limits/memory
+        value: 7Gi
+
+  - target:
+      kind: RestApi
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: delorder-test
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-delorder-test
+      - op: replace
+        path: /spec/controllerRef/name
+        value: delorder-test
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-delorder-test
+
+  - target:
+      kind: Secret
+      name: slurm-auth-slurm
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-delorder-test
+      - op: replace
+        path: /data/slurm.key
+        value: +QuwwucgsEisVc6B/FBZpwaxGGSiB2AgYjPm9Ojuy1kXwkhWMTLHlU1qkZwjtE7xVP7DmAbL83aW9z9VWH6lMA==
+
+  - target:
+      kind: Secret
+      name: slurm-auth-jwt
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-delorder-test
+      - op: replace
+        path: /data/jwt.key
+        value: D2WtXoUPPMxM+gYzHogJ5NWf1ZocqMop/e3eo7TM75o=
