@@ -82,7 +82,7 @@ patches:
         value: slurm-demo-cluster
       - op: replace
         path: /data/slurm.key
-        value: eU/se+VwkiyZ7w5BBkjYRotX2p+3BwY2abXVu+vAe4ImGPJ9r2aDdHxs4OHbvVc1/ktVrElf8JTbcYN8azzTmA==
+        value: wTTpAztbH1w4Z0O9HO63BakyO3DIdmgFzZJrQb66kHwaj837cnno/vaYSnxzS+cWDj3jRVHhBWsJ1UtKn8d2Xw==
 
   - target:
       kind: Secret
@@ -93,4 +93,4 @@ patches:
         value: slurm-demo-cluster
       - op: replace
         path: /data/jwt.key
-        value: PApp5rq81sKja7RPIjuEmcXt7hzTQH4KHBqm8Vrhbmw=
+        value: FwKLaPBr35Pgd/mWTQiRlIpCh8ykBq36KMd9hj06cmM=
