@@ -1,0 +1,92 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/slurm-cluster
+
+patches:
+  - target:
+      kind: Namespace
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-test-cm-verify
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: test-cm-verify
+
+  - target:
+      kind: Controller
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: test-cm-verify
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-cm-verify
+      - op: replace
+        path: /spec/clusterName
+        value: test-cm-verify
+
+  - target:
+      kind: NodeSet
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: test-cm-verify-workers
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-cm-verify
+      - op: replace
+        path: /spec/controllerRef/name
+        value: test-cm-verify
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-test-cm-verify
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/slurmd/resources/limits/cpu
+        value: "4"
+      - op: replace
+        path: /spec/slurmd/resources/limits/memory
+        value: 8Gi
+
+  - target:
+      kind: RestApi
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: test-cm-verify
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-cm-verify
+      - op: replace
+        path: /spec/controllerRef/name
+        value: test-cm-verify
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-test-cm-verify
+
+  - target:
+      kind: Secret
+      name: slurm-auth-slurm
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-cm-verify
+      - op: replace
+        path: /data/slurm.key
+        value: uOfqmKv5vhmQczgYC3Zg2NToaSIPWZiFE750/WJtl/EKfFG4hSxhgtyNhnoY01BjQl0WnyN8ZuUtm518ysbzgg==
+
+  - target:
+      kind: Secret
+      name: slurm-auth-jwt
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-test-cm-verify
+      - op: replace
+        path: /data/jwt.key
+        value: rqbjWTvMrq2MmzwJq3FR2/+EIqYk/6eRWIZfkZCssIE=
