@@ -1,0 +1,92 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/slurm-cluster
+
+patches:
+  - target:
+      kind: Namespace
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: e2e-bearer
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: e2e-bearer
+
+  - target:
+      kind: Controller
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: e2e-bearer
+      - op: replace
+        path: /metadata/namespace
+        value: e2e-bearer
+      - op: replace
+        path: /spec/clusterName
+        value: e2e-bearer
+
+  - target:
+      kind: NodeSet
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: e2e-bearer-workers
+      - op: replace
+        path: /metadata/namespace
+        value: e2e-bearer
+      - op: replace
+        path: /spec/controllerRef/name
+        value: e2e-bearer
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: e2e-bearer
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/slurmd/resources/limits/cpu
+        value: "4"
+      - op: replace
+        path: /spec/slurmd/resources/limits/memory
+        value: 8Gi
+
+  - target:
+      kind: RestApi
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: e2e-bearer
+      - op: replace
+        path: /metadata/namespace
+        value: e2e-bearer
+      - op: replace
+        path: /spec/controllerRef/name
+        value: e2e-bearer
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: e2e-bearer
+
+  - target:
+      kind: Secret
+      name: slurm-auth-slurm
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: e2e-bearer
+      - op: replace
+        path: /data/slurm.key
+        value: P7scqCCBv7F+pYk5dwxg09/NU0D5hPJ4/5FH18b6sofYP1edZvrG8dtCugsg3S2ayBjhEbuyW3elmylB2ErJ5g==
+
+  - target:
+      kind: Secret
+      name: slurm-auth-jwt
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: e2e-bearer
+      - op: replace
+        path: /data/jwt.key
+        value: xx29Yu0IRCC91Vx5sN0PJpnkwlFgxAIEE8xVaV5ctH4=
