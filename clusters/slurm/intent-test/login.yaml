@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: intent-test-sssd-conf
+  namespace: slurm-intent-test
+type: Opaque
+data:
+  sssd.conf: W3Nzc2RdCmNvbmZpZ19maWxlX3ZlcnNpb24gPSAyCnNlcnZpY2VzID0gbnNzLCBwYW0KZG9tYWlucyA9IEZJTEVTCgpbbnNzXQpmaWx0ZXJfdXNlcnMgPSByb290CmZpbHRlcl9ncm91cHMgPSByb290CgpbcGFtXQoKW2RvbWFpbi9GSUxFU10KaWRfcHJvdmlkZXIgPSBmaWxlcwplbnVtZXJhdGUgPSB0cnVlCg==
+---
+apiVersion: slinky.slurm.net/v1beta1
+kind: LoginSet
+metadata:
+  name: intent-test-login
+  namespace: slurm-intent-test
+spec:
+  controllerRef:
+    name: intent-test
+    namespace: slurm-intent-test
+  replicas: 1
+  sssdConfRef:
+    name: intent-test-sssd-conf
+    key: sssd.conf
+  rootSshAuthorizedKeys: |-
+    ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBintenttest2026XYZABCDEFGHIJKLMNOPQRSTUV intent@launcher
+  service:
+    type: ClusterIP
