@@ -1,0 +1,96 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/slurm-cluster
+  # login.yaml is rendered alongside kustomization.yaml — it adds the
+  # LoginSet CR and its sssd-conf Secret that the upstream base chart
+  # doesn't ship. Without it the cluster has no SSH entry point.
+  - ./login.yaml
+
+patches:
+  - target:
+      kind: Namespace
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-amber-forge-cluster
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: amber-forge-cluster
+
+  - target:
+      kind: Controller
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: amber-forge-cluster
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-amber-forge-cluster
+      - op: replace
+        path: /spec/clusterName
+        value: amber-forge-cluster
+
+  - target:
+      kind: NodeSet
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: amber-forge-cluster-workers
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-amber-forge-cluster
+      - op: replace
+        path: /spec/controllerRef/name
+        value: amber-forge-cluster
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-amber-forge-cluster
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/slurmd/resources/limits/cpu
+        value: "4"
+      - op: replace
+        path: /spec/slurmd/resources/limits/memory
+        value: 7Gi
+
+  - target:
+      kind: RestApi
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: amber-forge-cluster
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-amber-forge-cluster
+      - op: replace
+        path: /spec/controllerRef/name
+        value: amber-forge-cluster
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-amber-forge-cluster
+
+  - target:
+      kind: Secret
+      name: slurm-auth-slurm
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-amber-forge-cluster
+      - op: replace
+        path: /data/slurm.key
+        value: C1i8+z0jUShQFr7Ztadh/ndi1flTXdRDpRMM1OfrTeP+YLeZ0hXFEb9AFIjKE7zapfWiKF9/booxAnUxIBovtQ==
+
+  - target:
+      kind: Secret
+      name: slurm-auth-jwt
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-amber-forge-cluster
+      - op: replace
+        path: /data/jwt.key
+        value: u1jpcDz7FpfLO6wjuoH7Fzxcb5cKFkzs458J3svhZMA=
