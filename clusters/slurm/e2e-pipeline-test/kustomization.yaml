@@ -1,0 +1,92 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/slurm-cluster
+
+patches:
+  - target:
+      kind: Namespace
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-e2e-pipeline-test
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: e2e-pipeline-test
+
+  - target:
+      kind: Controller
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: e2e-pipeline-test
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-e2e-pipeline-test
+      - op: replace
+        path: /spec/clusterName
+        value: e2e-pipeline-test
+
+  - target:
+      kind: NodeSet
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: e2e-pipeline-test-workers
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-e2e-pipeline-test
+      - op: replace
+        path: /spec/controllerRef/name
+        value: e2e-pipeline-test
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-e2e-pipeline-test
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/slurmd/resources/limits/cpu
+        value: "4"
+      - op: replace
+        path: /spec/slurmd/resources/limits/memory
+        value: 16Gi
+
+  - target:
+      kind: RestApi
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: e2e-pipeline-test
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-e2e-pipeline-test
+      - op: replace
+        path: /spec/controllerRef/name
+        value: e2e-pipeline-test
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-e2e-pipeline-test
+
+  - target:
+      kind: Secret
+      name: slurm-auth-slurm
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-e2e-pipeline-test
+      - op: replace
+        path: /data/slurm.key
+        value: mvmBHv+Ifgf27BC6GnmjpUGmr2S+VvKiEvDN423cWw5/A9cjgxo6eVFxkkYrIymBxAzGvLjLOKVaMQxXWwKpBA==
+
+  - target:
+      kind: Secret
+      name: slurm-auth-jwt
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-e2e-pipeline-test
+      - op: replace
+        path: /data/jwt.key
+        value: C4JIzP5fRsA+gyc0/bnherIwQ8GfyU70Cf42oqHD+UE=
