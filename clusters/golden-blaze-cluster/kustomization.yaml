@@ -3,6 +3,10 @@ kind: Kustomization
 
 resources:
   - ../../base/tenant-infra
+  # extra-workers.yaml holds the MachineDeployment + OpenStackMachineTemplate
+  # pairs for worker groups beyond the primary. Each CAPI pool provisions
+  # its own fleet of VMs with its own OpenStack flavor.
+  - ./extra-workers.yaml
 
 patches:
   - target:
@@ -11,7 +15,7 @@ patches:
     patch: |
       - op: replace
         path: /metadata/name
-        value: slurm-golden-blaze-cluster
+        value: golden-blaze-cluster
       - op: replace
         path: /metadata/labels/launcher.supergate.io~1cluster-name
         value: golden-blaze-cluster
@@ -25,7 +29,7 @@ patches:
         value: golden-blaze-cluster-control-plane
       - op: replace
         path: /metadata/namespace
-        value: slurm-golden-blaze-cluster
+        value: golden-blaze-cluster
       - op: replace
         path: /spec/version
         value: "v1.30.0"
@@ -42,7 +46,7 @@ patches:
         value: golden-blaze-cluster
       - op: replace
         path: /metadata/namespace
-        value: slurm-golden-blaze-cluster
+        value: golden-blaze-cluster
       - op: replace
         path: /spec/controlPlaneRef/name
         value: golden-blaze-cluster-control-plane
@@ -59,7 +63,7 @@ patches:
         value: golden-blaze-cluster
       - op: replace
         path: /metadata/namespace
-        value: slurm-golden-blaze-cluster
+        value: golden-blaze-cluster
       - op: replace
         path: /spec/identityRef/name
         value: cloud-config
@@ -79,7 +83,7 @@ patches:
         value: golden-blaze-cluster-worker-mt
       - op: replace
         path: /metadata/namespace
-        value: slurm-golden-blaze-cluster
+        value: golden-blaze-cluster
       - op: replace
         path: /spec/template/spec/flavor
         value: a4v2
@@ -105,7 +109,7 @@ patches:
         value: golden-blaze-cluster-worker-config
       - op: replace
         path: /metadata/namespace
-        value: slurm-golden-blaze-cluster
+        value: golden-blaze-cluster
 
   - target:
       kind: MachineDeployment
@@ -116,7 +120,7 @@ patches:
         value: golden-blaze-cluster-md-0
       - op: replace
         path: /metadata/namespace
-        value: slurm-golden-blaze-cluster
+        value: golden-blaze-cluster
       - op: replace
         path: /spec/clusterName
         value: golden-blaze-cluster
@@ -142,4 +146,4 @@ patches:
     patch: |
       - op: replace
         path: /metadata/namespace
-        value: slurm-golden-blaze-cluster
+        value: golden-blaze-cluster

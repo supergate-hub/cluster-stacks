@@ -1,0 +1,47 @@
+
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OpenStackMachineTemplate
+metadata:
+  name: golden-blaze-cluster-interactive-mt
+  namespace: golden-blaze-cluster
+spec:
+  template:
+    spec:
+      flavor: a4v2
+      image:
+        filter:
+          name: ubuntu-2404-kube-v1.30.0
+      sshKeyName: capi-test
+      identityRef:
+        name: cloud-config
+        cloudName: capi-test
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: golden-blaze-cluster-interactive
+  namespace: golden-blaze-cluster
+spec:
+  clusterName: golden-blaze-cluster
+  replicas: 1
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: golden-blaze-cluster
+      cluster.x-k8s.io/deployment-name: golden-blaze-cluster-interactive
+  template:
+    metadata:
+      labels:
+        cluster.x-k8s.io/cluster-name: golden-blaze-cluster
+        cluster.x-k8s.io/deployment-name: golden-blaze-cluster-interactive
+    spec:
+      clusterName: golden-blaze-cluster
+      version: v1.30.0
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: golden-blaze-cluster-worker-config
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: OpenStackMachineTemplate
+        name: golden-blaze-cluster-interactive-mt

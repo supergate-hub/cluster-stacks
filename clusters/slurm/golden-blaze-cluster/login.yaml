@@ -20,7 +20,5 @@ spec:
   sssdConfRef:
     name: golden-blaze-cluster-sssd-conf
     key: sssd.conf
-  rootSshAuthorizedKeys: |-
-    ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBLAZE1 e2e-c@launcher
   service:
     type: ClusterIP

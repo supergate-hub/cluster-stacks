@@ -7,6 +7,10 @@ resources:
   # LoginSet CR and its sssd-conf Secret that the upstream base chart
   # doesn't ship. Without it the cluster has no SSH entry point.
   - ./login.yaml
+  # extra-nodesets.yaml holds additional NodeSet CRs (beyond the primary
+  # patched into the base above). Each entry provisions its own slurmd
+  # pod group with optional Slurm partition metadata.
+  - ./extra-nodesets.yaml
 
 patches:
   - target:
@@ -89,7 +93,7 @@ patches:
         value: slurm-golden-blaze-cluster
       - op: replace
         path: /data/slurm.key
-        value: bRNnaVPBPGuMiS7Z2NPn8ljmupltxm1LqLY5iKWmR6KuiDtQkgEMoaEmqtayYxikFe1zFhJqXINLeWU2BfxjCg==
+        value: h9GmvRNwchk6Pd8CNqOY/uCgak7h4JuM9Am/WUvk+nr/78WiTbW/B77qjxH0XJ3x7+PeMgZCh351VX0et+NFcA==
 
   - target:
       kind: Secret
@@ -100,4 +104,4 @@ patches:
         value: slurm-golden-blaze-cluster
       - op: replace
         path: /data/jwt.key
-        value: NE0ZBUwuV3jcms+gLN/zI1GpmnAPBhvx/taw73Fv0wQ=
+        value: 8ztMHHjrzJPdhpMv+SBVouI2IQKShl7sDfhyylBzpMI=
