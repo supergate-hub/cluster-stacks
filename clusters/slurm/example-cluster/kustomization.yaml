@@ -1,0 +1,86 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/slurm-cluster
+
+patches:
+  - target:
+      kind: Namespace
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-example-cluster
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: example-cluster
+
+  - target:
+      kind: Controller
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: example-cluster
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-example-cluster
+      - op: replace
+        path: /spec/clusterName
+        value: example-cluster
+
+  - target:
+      kind: NodeSet
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: example-cluster-workers
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-example-cluster
+      - op: replace
+        path: /spec/controllerRef/name
+        value: example-cluster
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-example-cluster
+      - op: replace
+        path: /spec/replicas
+        value: 2
+      - op: replace
+        path: /spec/slurmd/resources/limits/cpu
+        value: "4"
+      - op: replace
+        path: /spec/slurmd/resources/limits/memory
+        value: 8Gi
+
+  - target:
+      kind: RestApi
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: example-cluster
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-example-cluster
+      - op: replace
+        path: /spec/controllerRef/name
+        value: example-cluster
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-example-cluster
+
+  - target:
+      kind: Secret
+      name: slurm-auth-slurm
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-example-cluster
+
+  - target:
+      kind: Secret
+      name: slurm-auth-jwt
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-example-cluster

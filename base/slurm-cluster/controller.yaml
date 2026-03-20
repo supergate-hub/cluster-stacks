@@ -1,0 +1,36 @@
+apiVersion: slinky.slurm.net/v1beta1
+kind: Controller
+metadata:
+  name: CLUSTER_NAME
+  namespace: CLUSTER_NAMESPACE
+  labels:
+    app.kubernetes.io/managed-by: launcher
+spec:
+  clusterName: CLUSTER_NAME
+  slurmKeyRef:
+    name: slurm-auth-slurm
+    key: slurm.key
+  jwtKeyRef:
+    name: slurm-auth-jwt
+    key: jwt.key
+  slurmctld:
+    image: ghcr.io/slinkyproject/slurmctld:25.11-ubuntu24.04
+  reconfigure:
+    image: ghcr.io/slinkyproject/slurmctld:25.11-ubuntu24.04
+  logfile:
+    image: docker.io/library/alpine:latest
+  persistence:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 4Gi
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+  service:
+    spec:
+      type: ClusterIP
+    port: 6817

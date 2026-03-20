@@ -1,0 +1,28 @@
+apiVersion: slinky.slurm.net/v1beta1
+kind: NodeSet
+metadata:
+  name: CLUSTER_NAME-workers
+  namespace: CLUSTER_NAMESPACE
+  labels:
+    app.kubernetes.io/managed-by: launcher
+spec:
+  controllerRef:
+    name: CLUSTER_NAME
+    namespace: CLUSTER_NAMESPACE
+  scalingMode: StatefulSet
+  replicas: WORKER_REPLICAS
+  slurmd:
+    image: ghcr.io/slinkyproject/slurmd:25.11-ubuntu24.04
+    resources:
+      limits:
+        cpu: WORKER_CPU
+        memory: WORKER_MEMORY
+  logfile:
+    image: docker.io/library/alpine:latest
+  partition:
+    enabled: true
+    config: "State=UP MaxTime=UNLIMITED"
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux

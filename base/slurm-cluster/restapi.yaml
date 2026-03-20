@@ -1,0 +1,22 @@
+apiVersion: slinky.slurm.net/v1beta1
+kind: RestApi
+metadata:
+  name: CLUSTER_NAME
+  namespace: CLUSTER_NAMESPACE
+  labels:
+    app.kubernetes.io/managed-by: launcher
+spec:
+  controllerRef:
+    name: CLUSTER_NAME
+    namespace: CLUSTER_NAMESPACE
+  replicas: 1
+  slurmrestd:
+    image: ghcr.io/slinkyproject/slurmrestd:25.11-ubuntu24.04
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+  service:
+    spec:
+      type: ClusterIP
+    port: 6820

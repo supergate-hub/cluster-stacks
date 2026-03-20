@@ -1,0 +1,26 @@
+# Slinky slurm-operator installation
+# Prerequisites: cert-manager must be installed
+#
+# Install via Helm:
+#   helm install slurm-operator-crds oci://ghcr.io/slinkyproject/charts/slurm-operator-crds
+#   helm install slurm-operator oci://ghcr.io/slinkyproject/charts/slurm-operator \
+#     --namespace=slinky --create-namespace
+#
+# Requires:
+#   - Kubernetes v1.29+
+#   - Slurm 25.11 (bundled in container images)
+#   - Cgroup v2
+#   - cert-manager (for webhook certificates)
+#
+# Container images (ghcr.io/slinkyproject/):
+#   - slurmctld:25.11-ubuntu24.04
+#   - slurmd:25.11-ubuntu24.04
+#   - slurmrestd:25.11-ubuntu24.04
+#   - slurmdbd:25.11-ubuntu24.04
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: slinky
+  labels:
+    app.kubernetes.io/managed-by: launcher

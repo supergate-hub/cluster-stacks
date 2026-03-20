@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: CLUSTER_NAMESPACE
+  labels:
+    app.kubernetes.io/managed-by: launcher
+    launcher.supergate.io/cluster-type: slurm
+    launcher.supergate.io/cluster-name: CLUSTER_NAME
