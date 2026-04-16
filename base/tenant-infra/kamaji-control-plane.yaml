@@ -12,13 +12,6 @@ spec:
     serviceType: LoadBalancer
     certSANs:
       - CLUSTER_NAME.k8s.launcher.internal
-    ingress:
-      hostname: CLUSTER_NAME.k8s.launcher.internal
-      className: nginx-kamaji
-      extraAnnotations:
-        nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-        nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-        cert-manager.io/cluster-issuer: kamaji-ca
   addons:
     coreDNS: {}
     kubeProxy: {}
