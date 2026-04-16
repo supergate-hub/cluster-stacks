@@ -8,7 +8,7 @@ spec:
   goTemplateOptions: ["missingkey=error"]
   generators:
     - git:
-        repoURL: https://github.com/supergate-hub/cluster-stacks.git
+        repoURL: git@github.com:supergate-hub/cluster-stacks.git
         revision: HEAD
         directories:
           - path: clusters/*
@@ -22,7 +22,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/supergate-hub/cluster-stacks.git
+        repoURL: git@github.com:supergate-hub/cluster-stacks.git
         targetRevision: HEAD
         path: "{{.path.path}}"
       destination:
