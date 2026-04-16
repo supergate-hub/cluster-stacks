@@ -9,7 +9,7 @@ spec:
   replicas: 1
   registry: registry.k8s.io
   network:
-    serviceType: ClusterIP
+    serviceType: LoadBalancer
     certSANs:
       - CLUSTER_NAME.k8s.launcher.internal
     ingress:
