@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
-  - tcp.yaml
+  - kamaji-control-plane.yaml
   - openstack-cluster.yaml
   - cluster.yaml
   - openstack-machine-template.yaml

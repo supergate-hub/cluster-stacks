@@ -1,0 +1,39 @@
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+kind: KamajiControlPlane
+metadata:
+  name: CLUSTER_NAME-control-plane
+  namespace: NAMESPACE
+spec:
+  dataStoreName: default
+  version: K8S_VERSION
+  replicas: 1
+  registry: registry.k8s.io
+  network:
+    serviceType: ClusterIP
+    ingress:
+      hostname: CLUSTER_NAME.k8s.launcher.internal
+      ingressClassName: nginx-kamaji
+      additionalMetadata:
+        annotations:
+          nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+          nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+          cert-manager.io/cluster-issuer: kamaji-ca
+  addons:
+    coreDNS: {}
+    kubeProxy: {}
+    konnectivity: {}
+  kubelet:
+    preferredAddressTypes:
+      - InternalIP
+      - ExternalIP
+      - Hostname
+  apiServer:
+    resources: {}
+  controllerManager:
+    resources: {}
+  scheduler:
+    resources: {}
+  deployment:
+    additionalMetadata: {}
+    podAdditionalMetadata: {}
+    strategy: {}

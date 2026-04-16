@@ -12,9 +12,10 @@ spec:
     services:
       cidrBlocks: ["10.96.0.0/12"]
     serviceDomain: cluster.local
-  controlPlaneEndpoint:
-    host: CLUSTER_NAME.k8s.launcher.internal
-    port: 443
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+    kind: KamajiControlPlane
+    name: CLUSTER_NAME-control-plane
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: OpenStackCluster
