@@ -1,0 +1,21 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: CLUSTER_NAME
+  namespace: NAMESPACE
+  labels:
+    cni: cilium
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["10.244.0.0/16"]
+    services:
+      cidrBlocks: ["10.96.0.0/12"]
+    serviceDomain: cluster.local
+  controlPlaneEndpoint:
+    host: CLUSTER_NAME.k8s.launcher.internal
+    port: 443
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OpenStackCluster
+    name: CLUSTER_NAME

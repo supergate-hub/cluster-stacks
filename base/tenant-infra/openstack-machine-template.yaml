@@ -1,0 +1,17 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OpenStackMachineTemplate
+metadata:
+  name: CLUSTER_NAME-worker-mt
+  namespace: NAMESPACE
+spec:
+  template:
+    spec:
+      flavor: WORKER_FLAVOR
+      image:
+        filter:
+          name: WORKER_IMAGE
+      sshKeyName: SSH_KEY_NAME
+      configDrive: true
+      identityRef:
+        name: CLOUD_SECRET
+        cloudName: CLOUD_NAME

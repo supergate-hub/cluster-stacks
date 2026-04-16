@@ -1,0 +1,8 @@
+apiVersion: v2
+name: tenant-cert-manager
+version: 1.0.0
+description: cert-manager for tenant clusters (webhook TLS bootstrap)
+dependencies:
+  - name: cert-manager
+    version: v1.17.2
+    repository: https://charts.jetstack.io

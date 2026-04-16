@@ -1,0 +1,20 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OpenStackCluster
+metadata:
+  name: CLUSTER_NAME
+  namespace: NAMESPACE
+spec:
+  identityRef:
+    name: CLOUD_SECRET
+    cloudName: CLOUD_NAME
+    type: Secret
+  externalNetwork:
+    id: EXTERNAL_NETWORK_ID
+  managedSubnets:
+    - cidr: "10.6.0.0/24"
+      dnsNameservers:
+        - "8.8.8.8"
+  apiServerLoadBalancer:
+    enabled: false
+  disableAPIServerFloatingIP: true
+  managedSecurityGroups: {}

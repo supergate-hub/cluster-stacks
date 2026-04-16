@@ -1,0 +1,8 @@
+apiVersion: v2
+name: tenant-slinky-crds
+version: 1.0.0
+description: Slinky operator CRDs (Controller, NodeSet, LoginSet, etc.)
+dependencies:
+  - name: slurm-operator-crds
+    version: "1.1.0"
+    repository: "oci://ghcr.io/slinkyproject/charts"

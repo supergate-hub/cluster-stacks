@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - tcp.yaml
+  - openstack-cluster.yaml
+  - cluster.yaml
+  - openstack-machine-template.yaml
+  - kubeadm-config-template.yaml
+  - machine-deployment.yaml
+  - cilium-cni.yaml
+
+commonLabels:
+  app.kubernetes.io/managed-by: launcher
+  launcher.supergate.io/cluster-type: slurm

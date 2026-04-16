@@ -1,0 +1,8 @@
+apiVersion: v2
+name: tenant-slinky-operator
+version: 1.0.0
+description: Slinky SLURM operator for Kubernetes
+dependencies:
+  - name: slurm-operator
+    version: "1.1.0"
+    repository: "oci://ghcr.io/slinkyproject/charts"

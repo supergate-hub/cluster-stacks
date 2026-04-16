@@ -1,0 +1,13 @@
+apiVersion: addons.cluster.x-k8s.io/v1beta2
+kind: ClusterResourceSet
+metadata:
+  name: cilium-cni
+  namespace: NAMESPACE
+spec:
+  strategy: Reconcile
+  clusterSelector:
+    matchLabels:
+      cni: cilium
+  resources:
+    - name: cilium-cni-installation
+      kind: ConfigMap

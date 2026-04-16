@@ -1,0 +1,7 @@
+cert-manager:
+  crds:
+    enabled: true
+  startupapicheck:
+    enabled: false
+  global:
+    priorityClassName: system-cluster-critical

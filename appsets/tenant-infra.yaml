@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: launcher-tenant-infra
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/supergate-hub/cluster-stacks.git
+        revision: HEAD
+        directories:
+          - path: clusters/*
+  template:
+    metadata:
+      name: "infra-{{.path.basename}}"
+      namespace: argocd
+      labels:
+        app.kubernetes.io/managed-by: launcher
+        launcher.supergate.io/component: tenant-infra
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/supergate-hub/cluster-stacks.git
+        targetRevision: HEAD
+        path: "{{.path.path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{.path.basename}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 10
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

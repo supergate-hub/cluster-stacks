@@ -1,0 +1,66 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: launcher-tenant-addons
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          # 1. Discover tenant clusters registered in ArgoCD (by label)
+          - clusters:
+              selector:
+                matchLabels:
+                  launcher.supergate.io/cluster-type: slurm
+          # 2. List of addons to deploy (order matters via sync-wave)
+          - list:
+              elements:
+                - addon: local-path-provisioner
+                  namespace: local-path-storage
+                  wave: "0"
+                - addon: cert-manager
+                  namespace: cert-manager
+                  wave: "1"
+                - addon: slinky-crds
+                  namespace: slinky-system
+                  wave: "2"
+                - addon: slinky-operator
+                  namespace: slinky-system
+                  wave: "3"
+  template:
+    metadata:
+      name: "{{.name}}-{{.addon}}"
+      namespace: argocd
+      labels:
+        app.kubernetes.io/managed-by: launcher
+        launcher.supergate.io/component: tenant-addon
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{.wave}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/supergate-hub/cluster-stacks.git
+        targetRevision: HEAD
+        path: "catalog/{{.addon}}"
+        helm:
+          valueFiles:
+            - values.yaml
+      destination:
+        server: "{{.server}}"
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 10
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
