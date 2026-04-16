@@ -14,12 +14,11 @@ spec:
       - CLUSTER_NAME.k8s.launcher.internal
     ingress:
       hostname: CLUSTER_NAME.k8s.launcher.internal
-      ingressClassName: nginx-kamaji
-      additionalMetadata:
-        annotations:
-          nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-          nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-          cert-manager.io/cluster-issuer: kamaji-ca
+      className: nginx-kamaji
+      extraAnnotations:
+        nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+        nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+        cert-manager.io/cluster-issuer: kamaji-ca
   addons:
     coreDNS: {}
     kubeProxy: {}
@@ -29,13 +28,3 @@ spec:
       - InternalIP
       - ExternalIP
       - Hostname
-  apiServer:
-    resources: {}
-  controllerManager:
-    resources: {}
-  scheduler:
-    resources: {}
-  deployment:
-    additionalMetadata: {}
-    podAdditionalMetadata: {}
-    strategy: {}

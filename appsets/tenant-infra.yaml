@@ -12,6 +12,8 @@ spec:
         revision: HEAD
         directories:
           - path: clusters/*
+          - path: clusters/slurm
+            exclude: true
   template:
     metadata:
       name: "infra-{{.path.basename}}"
