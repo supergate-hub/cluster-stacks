@@ -10,6 +10,8 @@ spec:
   registry: registry.k8s.io
   network:
     serviceType: ClusterIP
+    certSANs:
+      - CLUSTER_NAME.k8s.launcher.internal
     ingress:
       hostname: CLUSTER_NAME.k8s.launcher.internal
       ingressClassName: nginx-kamaji
