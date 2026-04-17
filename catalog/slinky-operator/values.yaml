@@ -1,3 +1,8 @@
 slurm-operator:
   serviceMonitor:
     enabled: false
+  webhook:
+    # Use Ignore so cross-namespace pod scheduling (cert-manager, local-path-provisioner)
+    # isn't blocked when the webhook TLS cert isn't yet issued. Fail closes the deadlock
+    # where webhook cert depends on cert-manager, which can't schedule through the webhook.
+    failurePolicy: Ignore
