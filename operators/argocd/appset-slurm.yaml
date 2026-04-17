@@ -26,7 +26,10 @@ spec:
         targetRevision: HEAD
         path: "{{.path.path}}"
       destination:
-        server: https://kubernetes.default.svc
+        # Target the tenant cluster registered in ArgoCD with name matching path.basename.
+        # The RegisterCluster call in SlurmProvider.Get() creates the cluster Secret
+        # with metadata.name == cluster name (e.g. "e2e-v1").
+        name: "{{.path.basename}}"
       syncPolicy:
         automated:
           prune: true
