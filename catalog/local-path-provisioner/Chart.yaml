@@ -1,4 +1,4 @@
 apiVersion: v2
 name: tenant-local-path
 version: 1.0.0
-description: Local path provisioner for tenant cluster default StorageClass
+description: Local path provisioner (official manifests embedded as templates)
