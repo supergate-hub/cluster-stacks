@@ -6,3 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: launcher
     launcher.supergate.io/cluster-type: slurm
     launcher.supergate.io/cluster-name: CLUSTER_NAME
+    # Marks this namespace as subject to slinky operator webhook.
+    # The webhook's namespaceSelector is patched to only intercept namespaces
+    # with this label, preventing cross-namespace scheduling deadlock.
+    launcher.supergate.io/slurm-managed: "true"
