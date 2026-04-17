@@ -50,7 +50,8 @@ spec:
           valueFiles:
             - values.yaml
       destination:
-        server: "{{.server}}"
+        # Use cluster name (matches slurm ApplicationSet) so ArgoCD treats them as the same cluster.
+        name: "{{.name}}"
         namespace: "{{.namespace}}"
       syncPolicy:
         automated:
