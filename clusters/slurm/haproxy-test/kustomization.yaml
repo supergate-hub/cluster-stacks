@@ -1,0 +1,96 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/slurm-cluster
+  # login.yaml is rendered alongside kustomization.yaml — it adds the
+  # LoginSet CR and its sssd-conf Secret that the upstream base chart
+  # doesn't ship. Without it the cluster has no SSH entry point.
+  - ./login.yaml
+
+patches:
+  - target:
+      kind: Namespace
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-haproxy-test
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: haproxy-test
+
+  - target:
+      kind: Controller
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: haproxy-test
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-haproxy-test
+      - op: replace
+        path: /spec/clusterName
+        value: haproxy-test
+
+  - target:
+      kind: NodeSet
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: haproxy-test-workers
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-haproxy-test
+      - op: replace
+        path: /spec/controllerRef/name
+        value: haproxy-test
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-haproxy-test
+      - op: replace
+        path: /spec/replicas
+        value: 2
+      - op: replace
+        path: /spec/slurmd/resources/limits/cpu
+        value: "3"
+      - op: replace
+        path: /spec/slurmd/resources/limits/memory
+        value: 7Gi
+
+  - target:
+      kind: RestApi
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: haproxy-test
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-haproxy-test
+      - op: replace
+        path: /spec/controllerRef/name
+        value: haproxy-test
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-haproxy-test
+
+  - target:
+      kind: Secret
+      name: slurm-auth-slurm
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-haproxy-test
+      - op: replace
+        path: /data/slurm.key
+        value: XI8OeMXzLh4LSWkh4h2mUscZQ7xJJ7uOioN9Dvr9TtQsEAsYHnPzHBkHYZKQOC5Ag0XRbXxzxXa34OTQPFyRCg==
+
+  - target:
+      kind: Secret
+      name: slurm-auth-jwt
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-haproxy-test
+      - op: replace
+        path: /data/jwt.key
+        value: 4Teo3v9mjBNa/BzS75Mowmg+C3Zvs8QDnLtpo+KO68g=
