@@ -69,6 +69,20 @@ patches:
       - op: replace
         path: /spec/externalNetwork/id
         value: fea71d83-27da-4636-9a8b-842f93bcaccf
+      - op: replace
+        path: /spec/managedSecurityGroups
+        value:
+          allowAllInClusterTraffic: false
+          workerNodesSecurityGroupRules:
+            - name: cilium-vxlan-worker-self
+              description: Allow Cilium VXLAN overlay traffic between tenant worker nodes
+              direction: ingress
+              etherType: IPv4
+              protocol: udp
+              portRangeMin: 8472
+              portRangeMax: 8472
+              remoteManagedGroups:
+                - worker
 
   - target:
       kind: OpenStackMachineTemplate
