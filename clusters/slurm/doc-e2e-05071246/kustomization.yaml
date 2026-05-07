@@ -1,0 +1,96 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/slurm-cluster
+  # login.yaml is rendered alongside kustomization.yaml — it adds the
+  # LoginSet CR and its sssd-conf Secret that the upstream base chart
+  # doesn't ship. Without it the cluster has no SSH entry point.
+  - ./login.yaml
+
+patches:
+  - target:
+      kind: Namespace
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-doc-e2e-05071246
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: doc-e2e-05071246
+
+  - target:
+      kind: Controller
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: doc-e2e-05071246
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-doc-e2e-05071246
+      - op: replace
+        path: /spec/clusterName
+        value: doc-e2e-05071246
+
+  - target:
+      kind: NodeSet
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: doc-e2e-05071246-workers
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-doc-e2e-05071246
+      - op: replace
+        path: /spec/controllerRef/name
+        value: doc-e2e-05071246
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-doc-e2e-05071246
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/slurmd/resources/limits/cpu
+        value: "3"
+      - op: replace
+        path: /spec/slurmd/resources/limits/memory
+        value: 7Gi
+
+  - target:
+      kind: RestApi
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: doc-e2e-05071246
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-doc-e2e-05071246
+      - op: replace
+        path: /spec/controllerRef/name
+        value: doc-e2e-05071246
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-doc-e2e-05071246
+
+  - target:
+      kind: Secret
+      name: slurm-auth-slurm
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-doc-e2e-05071246
+      - op: replace
+        path: /data/slurm.key
+        value: 6QdGdWZ38EFpd1qIhWijA8f2EU6UOLG2zXyrf0wEUa32cqxR33orn1lPPXRn3ilM2GMYQ4lV3qDLyJjoFzxIGQ==
+
+  - target:
+      kind: Secret
+      name: slurm-auth-jwt
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-doc-e2e-05071246
+      - op: replace
+        path: /data/jwt.key
+        value: qjVa7zGeWVUJIlkf/K0fv7bNIgafNnvI2Qw2ig6Qeyo=
