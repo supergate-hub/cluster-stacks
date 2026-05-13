@@ -10,6 +10,7 @@ resources:
   - kubeadm-config-template.yaml
   - machine-deployment.yaml
   - cilium-cni.yaml
+  - tenant-admin-rbac.yaml
 
 commonLabels:
   app.kubernetes.io/managed-by: launcher

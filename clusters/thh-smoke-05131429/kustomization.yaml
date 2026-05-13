@@ -157,3 +157,19 @@ patches:
       - op: replace
         path: /metadata/namespace
         value: slurm-thh-smoke-05131429
+
+  - target:
+      kind: ConfigMap
+      name: tenant-admin-rbac
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-thh-smoke-05131429
+
+  - target:
+      kind: ClusterResourceSet
+      name: tenant-admin-rbac
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-thh-smoke-05131429
