@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: thh-smoke-05131429-sssd-conf
+  namespace: slurm-thh-smoke-05131429
+type: Opaque
+data:
+  sssd.conf: W3Nzc2RdCmNvbmZpZ19maWxlX3ZlcnNpb24gPSAyCnNlcnZpY2VzID0gbnNzLCBwYW0KZG9tYWlucyA9IEZJTEVTCgpbbnNzXQpmaWx0ZXJfdXNlcnMgPSByb290CmZpbHRlcl9ncm91cHMgPSByb290CgpbcGFtXQoKW2RvbWFpbi9GSUxFU10KaWRfcHJvdmlkZXIgPSBmaWxlcwplbnVtZXJhdGUgPSB0cnVlCg==
+---
+apiVersion: slinky.slurm.net/v1beta1
+kind: LoginSet
+metadata:
+  name: thh-smoke-05131429-login
+  namespace: slurm-thh-smoke-05131429
+spec:
+  controllerRef:
+    name: thh-smoke-05131429
+    namespace: slurm-thh-smoke-05131429
+  replicas: 1
+  sssdConfRef:
+    name: thh-smoke-05131429-sssd-conf
+    key: sssd.conf
+  rootSshAuthorizedKeys: |-
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC8MTGbUho9KEDcEwbzzVdVM9hrOw3RBif0RO7T7F4iAHL/dh5vVl/Zc4k7D5AenBzE/VqDneyWc8+xm+ljbYOHHLr912HlFTtMenAHxxXrkYhCMDRN+5Z3znqU8k/mbzzqDStJVRhxL2HrSezuCmL3GnxS1dSF7ddULoQTQ8hknhmzL5BrAq8iVWqQvmp8iPR4FCnOdnpO+RONieTTNQfuVjdEWb8IWprupY1H0ANvPcQxUZONCHE0QUICmUEpReg3gab5zuqkglHQ/H9VUXhHpY0SvyHajHE3uj5lFWVTeGoCFXPJpmpfUY52OGFZndSkHlEccsID8t05oNraPt2d
+  login:
+    image: ghcr.io/slinkyproject/login:25.11-ubuntu24.04
+    imagePullPolicy: IfNotPresent
+  initconf:
+    image: docker.io/library/alpine:latest
+    imagePullPolicy: IfNotPresent
+  service:
+    spec:
+      type: NodePort
