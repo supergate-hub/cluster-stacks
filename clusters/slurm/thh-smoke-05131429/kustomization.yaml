@@ -62,7 +62,7 @@ patches:
         path: /spec/partition
         value:
           enabled: true
-          config: "Name=main Default=YES"
+          config: "PartitionName=main Default=YES"
 
   - target:
       kind: RestApi
