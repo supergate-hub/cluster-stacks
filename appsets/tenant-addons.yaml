@@ -22,15 +22,18 @@ spec:
                 - addon: local-path-provisioner
                   namespace: local-path-storage
                   wave: "0"
+                - addon: compute-csi-plugin
+                  namespace: kube-system
+                  wave: "1"
                 - addon: cert-manager
                   namespace: cert-manager
-                  wave: "1"
+                  wave: "2"
                 - addon: slinky-crds
                   namespace: slinky-system
-                  wave: "2"
+                  wave: "3"
                 - addon: slinky-operator
                   namespace: slinky-system
-                  wave: "3"
+                  wave: "4"
   template:
     metadata:
       name: "{{.name}}-{{.addon}}"
@@ -49,6 +52,9 @@ spec:
         helm:
           valueFiles:
             - values.yaml
+          parameters:
+            - name: openstack-cinder-csi.clusterID
+              value: "{{.name}}"
       destination:
         # Use cluster name (matches slurm ApplicationSet) so ArgoCD treats them as the same cluster.
         name: "{{.name}}"

@@ -1,0 +1,32 @@
+openstack-cinder-csi:
+  secret:
+    enabled: true
+    hostMount: false
+    create: false
+    name: openstack-cloud-config
+    filename: cloud.conf
+
+  csi:
+    plugin:
+      volumes: []
+      volumeMounts:
+        - name: cloud-config
+          mountPath: /etc/kubernetes
+          readOnly: true
+      nodePlugin:
+        tolerations:
+          - operator: Exists
+
+  storageClass:
+    enabled: false
+    custom: |-
+      apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: compute-csi-default-sc
+        annotations:
+          storageclass.kubernetes.io/is-default-class: "true"
+      provisioner: cinder.csi.openstack.org
+      volumeBindingMode: WaitForFirstConsumer
+      reclaimPolicy: Delete
+      allowVolumeExpansion: true
