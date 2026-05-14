@@ -25,15 +25,18 @@ spec:
                 - addon: compute-csi-plugin
                   namespace: kube-system
                   wave: "1"
+                - addon: openstack-cloud-controller-manager
+                  namespace: kube-system
+                  wave: "2"
                 - addon: cert-manager
                   namespace: cert-manager
-                  wave: "2"
+                  wave: "3"
                 - addon: slinky-crds
                   namespace: slinky-system
-                  wave: "3"
+                  wave: "4"
                 - addon: slinky-operator
                   namespace: slinky-system
-                  wave: "4"
+                  wave: "5"
   template:
     metadata:
       name: "{{.name}}-{{.addon}}"
@@ -70,8 +73,17 @@ spec:
                         hostnames:
                           - "{{ $hostAliasDNS }}"
             {{- end }}
+            {{- if and (eq .addon "openstack-cloud-controller-manager") $hostAliasIP $hostAliasDNS }}
+            openstack-cloud-controller-manager:
+              hostAliases:
+                - ip: "{{ $hostAliasIP }}"
+                  hostnames:
+                    - "{{ $hostAliasDNS }}"
+            {{- end }}
           parameters:
             - name: openstack-cinder-csi.clusterID
+              value: "{{.name}}"
+            - name: openstack-cloud-controller-manager.cluster.name
               value: "{{.name}}"
       destination:
         # Use cluster name (matches slurm ApplicationSet) so ArgoCD treats them as the same cluster.

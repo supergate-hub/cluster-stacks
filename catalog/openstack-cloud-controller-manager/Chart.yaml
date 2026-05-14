@@ -1,0 +1,8 @@
+apiVersion: v2
+name: tenant-openstack-cloud-controller-manager
+version: 0.1.0
+description: OpenStack cloud controller manager for Launcher tenant clusters
+dependencies:
+  - name: openstack-cloud-controller-manager
+    version: "2.30.3"
+    repository: https://kubernetes.github.io/cloud-provider-openstack

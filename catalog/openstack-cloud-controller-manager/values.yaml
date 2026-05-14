@@ -1,0 +1,26 @@
+openstack-cloud-controller-manager:
+  secret:
+    enabled: true
+    create: false
+    name: openstack-cloud-config
+
+  enabledControllers:
+    - service
+
+  # Kamaji tenant clusters do not have in-cluster control-plane nodes, so the
+  # tenant CCM must be allowed to run on worker nodes.
+  nodeSelector: null
+  tolerations:
+    - operator: Exists
+
+  dnsPolicy: ClusterFirstWithHostNet
+  extraVolumes: []
+  extraVolumeMounts: []
+
+  cloudConfig:
+    global: {}
+    networking: {}
+    loadBalancer: {}
+    blockStorage: {}
+    metadata: {}
+    route: {}
