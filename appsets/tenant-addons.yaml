@@ -52,6 +52,24 @@ spec:
         helm:
           valueFiles:
             - values.yaml
+          values: |
+            {{- $hostAliasIP := index .metadata.labels "launcher.supergate.io/openstack-host-alias-ip" }}
+            {{- $hostAliasDNS := index .metadata.labels "launcher.supergate.io/openstack-host-alias-dns" }}
+            {{- if and (eq .addon "compute-csi-plugin") $hostAliasIP $hostAliasDNS }}
+            openstack-cinder-csi:
+              csi:
+                plugin:
+                  nodePlugin:
+                    hostAliases:
+                      - ip: "{{ $hostAliasIP }}"
+                        hostnames:
+                          - "{{ $hostAliasDNS }}"
+                  controllerPlugin:
+                    hostAliases:
+                      - ip: "{{ $hostAliasIP }}"
+                        hostnames:
+                          - "{{ $hostAliasDNS }}"
+            {{- end }}
           parameters:
             - name: openstack-cinder-csi.clusterID
               value: "{{.name}}"
