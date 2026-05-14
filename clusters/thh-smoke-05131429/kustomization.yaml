@@ -32,6 +32,14 @@ patches:
       - op: replace
         path: /spec/network/certSANs/0
         value: thh-smoke-05131429.k8s.launcher.internal
+      - op: add
+        path: /spec/network/certSANs/-
+        value: 192.168.81.250
+      - op: add
+        path: /spec/controlPlaneEndpoint
+        value:
+          host: 192.168.81.250
+          port: 2223
 
   - target:
       kind: Cluster
@@ -49,6 +57,11 @@ patches:
       - op: replace
         path: /spec/infrastructureRef/name
         value: thh-smoke-05131429
+      - op: add
+        path: /spec/controlPlaneEndpoint
+        value:
+          host: 192.168.81.250
+          port: 2223
 
   - target:
       kind: OpenStackCluster
