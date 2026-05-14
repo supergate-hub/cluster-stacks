@@ -32,15 +32,6 @@ patches:
       - op: replace
         path: /spec/network/certSANs/0
         value: thh-smoke-05131429.k8s.launcher.internal
-      - op: add
-        path: /spec/network/certSANs/-
-        value: 192.168.81.250
-      - op: add
-        path: /spec/controlPlaneEndpoint
-        value:
-          host: 192.168.81.250
-          port: 2223
-
   - target:
       kind: Cluster
       name: CLUSTER_NAME
@@ -60,7 +51,7 @@ patches:
       - op: add
         path: /spec/controlPlaneEndpoint
         value:
-          host: 192.168.81.250
+          host: thh-smoke-05131429.k8s.launcher.internal
           port: 2223
 
   - target:
@@ -133,6 +124,10 @@ patches:
       - op: replace
         path: /metadata/namespace
         value: slurm-thh-smoke-05131429
+      - op: add
+        path: /spec/template/spec/preKubeadmCommands
+        value:
+          - echo "192.168.81.250 thh-smoke-05131429.k8s.launcher.internal" >> /etc/hosts
 
   - target:
       kind: MachineDeployment
