@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: launcher-tenant-cinder-csi
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "9"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            launcher.supergate.io/cinder-csi: enabled
+            launcher.supergate.io/addon-owner: applicationset
+  template:
+    metadata:
+      name: "{{.name}}-openstack-cinder-csi"
+      namespace: argocd
+      labels:
+        app.kubernetes.io/managed-by: launcher
+        launcher.supergate.io/component: tenant-cinder-csi
+      annotations:
+        argocd.argoproj.io/sync-wave: "9"
+    spec:
+      project: default
+      source:
+        repoURL: git@github.com:supergate-hub/cluster-stacks.git
+        targetRevision: HEAD
+        path: catalog/openstack-cinder-csi
+        helm:
+          valueFiles:
+            - values.yaml
+          parameters:
+            - name: openstack-cinder-csi.clusterID
+              value: "{{.name}}"
+      destination:
+        name: "{{.name}}"
+        namespace: kube-system
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 10
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m

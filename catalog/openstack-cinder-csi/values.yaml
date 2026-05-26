@@ -1,0 +1,20 @@
+openstack-cinder-csi:
+  secret:
+    enabled: true
+    hostMount: false
+    create: false
+    name: openstack-cloud-config
+    filename: cloud.conf
+
+  storageClass:
+    enabled: true
+    delete:
+      isDefault: true
+    retain:
+      isDefault: false
+
+  csi:
+    plugin:
+      nodePlugin:
+        tolerations:
+          - operator: Exists

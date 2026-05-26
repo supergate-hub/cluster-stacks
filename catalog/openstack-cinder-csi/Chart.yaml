@@ -1,0 +1,8 @@
+apiVersion: v2
+name: tenant-openstack-cinder-csi
+version: 0.1.0
+description: OpenStack Cinder CSI driver for Launcher tenant clusters
+dependencies:
+  - name: openstack-cinder-csi
+    version: "2.30.3"
+    repository: https://kubernetes.github.io/cloud-provider-openstack
