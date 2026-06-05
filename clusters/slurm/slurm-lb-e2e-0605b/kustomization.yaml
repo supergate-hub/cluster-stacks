@@ -1,0 +1,103 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/slurm-cluster
+  # login.yaml is rendered alongside kustomization.yaml — it adds the
+  # LoginSet CR and its sssd-conf Secret that the upstream base chart
+  # doesn't ship. Without it the cluster has no SSH entry point.
+  - ./login.yaml
+
+patches:
+  - target:
+      kind: Namespace
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-slurm-lb-e2e-0605b
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: slurm-lb-e2e-0605b
+
+  - target:
+      kind: Controller
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-lb-e2e-0605b
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-slurm-lb-e2e-0605b
+      - op: replace
+        path: /spec/clusterName
+        value: slurm-lb-e2e-0605b
+
+  - target:
+      kind: NodeSet
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-lb-e2e-0605b-workers
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-slurm-lb-e2e-0605b
+      - op: replace
+        path: /spec/controllerRef/name
+        value: slurm-lb-e2e-0605b
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-slurm-lb-e2e-0605b
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/slurmd/resources/limits/cpu
+        value: "3"
+      - op: replace
+        path: /spec/slurmd/resources/limits/memory
+        value: 7Gi
+      # Primary-group Slurm partition. Uses op=add (not replace) because
+      # the base NodeSet in the upstream chart doesn't declare spec.partition.
+      - op: add
+        path: /spec/partition
+        value:
+          enabled: true
+          config: "Default=YES MaxTime=24:00:00"
+
+  - target:
+      kind: RestApi
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-lb-e2e-0605b
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-slurm-lb-e2e-0605b
+      - op: replace
+        path: /spec/controllerRef/name
+        value: slurm-lb-e2e-0605b
+      - op: replace
+        path: /spec/controllerRef/namespace
+        value: slurm-slurm-lb-e2e-0605b
+
+  - target:
+      kind: Secret
+      name: slurm-auth-slurm
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-slurm-lb-e2e-0605b
+      - op: replace
+        path: /data/slurm.key
+        value: /xr+f2leOndRNuh8KgHWn1FehOFl66Q+XtEfLRHtctP/dA21E3ybTsd0qDldTswIoJSkWkn4nIuOy/zMRTN4/A==
+
+  - target:
+      kind: Secret
+      name: slurm-auth-jwt
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-slurm-lb-e2e-0605b
+      - op: replace
+        path: /data/jwt.key
+        value: 7DvPkUKV2dhzv4nn8NCbcNTsrm+kDBZ69rJoobVkLkg=
