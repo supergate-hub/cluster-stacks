@@ -1,0 +1,326 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tenant-observability-agent
+  namespace: slurm-lb-e2e-0605a
+data:
+  observability.yaml: |
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: launcher-observability
+      labels:
+        app.kubernetes.io/managed-by: launcher
+        launcher.supergate.io/cluster-name: slurm-lb-e2e-0605a
+    ---
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: prometheus-agent
+      namespace: launcher-observability
+    ---
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: launcher-prometheus-agent
+    rules:
+      - apiGroups: [""]
+        resources: ["nodes", "nodes/proxy", "services", "endpoints", "pods"]
+        verbs: ["get", "list", "watch"]
+      - nonResourceURLs: ["/metrics"]
+        verbs: ["get"]
+    ---
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: launcher-prometheus-agent
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: launcher-prometheus-agent
+    subjects:
+      - kind: ServiceAccount
+        name: prometheus-agent
+        namespace: launcher-observability
+    ---
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: prometheus-agent-config
+      namespace: launcher-observability
+    data:
+      prometheus.yml: |
+        global:
+          scrape_interval: 15s
+          external_labels:
+            cluster: slurm-lb-e2e-0605a
+            launcher_cluster: slurm-lb-e2e-0605a
+        remote_write:
+          - url: http://192.168.122.208:8428/api/v1/write
+        scrape_configs:
+          - job_name: kubelet-cadvisor
+            scheme: https
+            kubernetes_sd_configs:
+              - role: node
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              insecure_skip_verify: true
+            relabel_configs:
+              - target_label: __address__
+                replacement: kubernetes.default.svc:443
+              - source_labels: [__meta_kubernetes_node_name]
+                regex: (.+)
+                target_label: __metrics_path__
+                replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+              - source_labels: [__meta_kubernetes_node_name]
+                target_label: node
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: prometheus-agent
+      namespace: launcher-observability
+      labels:
+        app.kubernetes.io/name: prometheus-agent
+        app.kubernetes.io/managed-by: launcher
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: prometheus-agent
+      template:
+        metadata:
+          annotations:
+            launcher.supergate.io/config-hash: "308c50c227476791"
+          labels:
+            app.kubernetes.io/name: prometheus-agent
+            app.kubernetes.io/managed-by: launcher
+            launcher.supergate.io/cluster-name: slurm-lb-e2e-0605a
+        spec:
+          serviceAccountName: prometheus-agent
+          containers:
+            - name: prometheus
+              image: quay.io/prometheus/prometheus:v3.2.1
+              args:
+                - --config.file=/etc/prometheus/prometheus.yml
+                - --storage.tsdb.path=/prometheus
+                - --storage.tsdb.retention.time=2h
+                - --web.listen-address=:9090
+              ports:
+                - name: http
+                  containerPort: 9090
+              volumeMounts:
+                - name: config
+                  mountPath: /etc/prometheus
+                - name: data
+                  mountPath: /prometheus
+          volumes:
+            - name: config
+              configMap:
+                name: prometheus-agent-config
+            - name: data
+              emptyDir: {}
+    ---
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: fluent-bit
+      namespace: launcher-observability
+    ---
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: launcher-fluent-bit
+    rules:
+      - apiGroups: [""]
+        resources: ["namespaces", "pods"]
+        verbs: ["get", "list", "watch"]
+    ---
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: launcher-fluent-bit
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: launcher-fluent-bit
+    subjects:
+      - kind: ServiceAccount
+        name: fluent-bit
+        namespace: launcher-observability
+    ---
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: fluent-bit-config
+      namespace: launcher-observability
+    data:
+      fluent-bit.conf: |
+        [SERVICE]
+            Flush         5
+            Log_Level     info
+            Parsers_File  parsers.conf
+
+        [INPUT]
+            Name              tail
+            Tag               kube.*
+            Path              /var/log/containers/*.log
+            Parser            cri
+            Mem_Buf_Limit     20MB
+            Skip_Long_Lines   On
+            Refresh_Interval  10
+
+        [FILTER]
+            Name                kubernetes
+            Match               kube.*
+            Kube_URL            https://kubernetes.default.svc:443
+            Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+            Kube_Tag_Prefix     kube.var.log.containers.
+            Merge_Log           On
+            Keep_Log            Off
+            K8S-Logging.Parser  On
+            K8S-Logging.Exclude On
+
+        [FILTER]
+            Name    lua
+            Match   kube.*
+            script  /fluent-bit/scripts/to_clickhouse.lua
+            call    to_clickhouse
+
+        [OUTPUT]
+            Name          http
+            Match         kube.*
+            Host          192.168.122.217
+            Port          8123
+            URI           /?input_format_skip_unknown_fields=1&query=INSERT+INTO+k8s_logs.logs_v2+FORMAT+JSONEachRow
+            Format        json_lines
+            Json_date_key false
+            HTTP_User     ${CLICKHOUSE_USER}
+            HTTP_Passwd   ${CLICKHOUSE_PASSWORD}
+            Header        Content-Type application/x-ndjson
+      parsers.conf: |
+        [PARSER]
+            Name        cri
+            Format      regex
+            Regex       ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<log>.*)$
+            Time_Key    time
+            Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+      to_clickhouse.lua: |
+        local cluster_name = "slurm-lb-e2e-0605a"
+
+        local function timestamp_string(ts)
+          local sec = os.time()
+          if type(ts) == "table" then
+            sec = tonumber(ts["sec"] or ts[1]) or sec
+          elseif type(ts) == "number" then
+            sec = math.floor(ts)
+          end
+          return os.date("!%Y-%m-%d %H:%M:%S", sec)
+        end
+
+        function to_clickhouse(tag, timestamp, record)
+          local kubernetes = record["kubernetes"] or {}
+          local labels = kubernetes["labels"] or {}
+          if type(labels) ~= "table" then
+            labels = {}
+          end
+          labels["launcher_cluster"] = cluster_name
+
+          local out = {
+            timestamp = timestamp_string(timestamp),
+            cluster = cluster_name,
+            namespace = kubernetes["namespace_name"] or record["namespace"] or "",
+            pod_name = kubernetes["pod_name"] or record["pod_name"] or "",
+            container_name = kubernetes["container_name"] or record["container_name"] or "",
+            workload = labels["app.kubernetes.io/name"] or labels["app"] or "",
+            node_name = kubernetes["host"] or kubernetes["node_name"] or record["node_name"] or "",
+            log_level = string.upper(record["level"] or record["stream"] or "INFO"),
+            message = tostring(record["log"] or record["message"] or ""),
+            log_id = "",
+            labels = labels
+          }
+
+          return 2, timestamp, out
+        end
+    ---
+    apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      name: fluent-bit
+      namespace: launcher-observability
+      labels:
+        app.kubernetes.io/name: fluent-bit
+        app.kubernetes.io/managed-by: launcher
+    spec:
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: fluent-bit
+      template:
+        metadata:
+          annotations:
+            launcher.supergate.io/config-hash: "308c50c227476791"
+          labels:
+            app.kubernetes.io/name: fluent-bit
+            app.kubernetes.io/managed-by: launcher
+            launcher.supergate.io/cluster-name: slurm-lb-e2e-0605a
+        spec:
+          serviceAccountName: fluent-bit
+          tolerations:
+            - operator: Exists
+          containers:
+            - name: fluent-bit
+              image: fluent/fluent-bit:3.2.10
+              env:
+                - name: CLICKHOUSE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: clickhouse-auth
+                      key: username
+                - name: CLICKHOUSE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: clickhouse-auth
+                      key: password
+              volumeMounts:
+                - name: config
+                  mountPath: /fluent-bit/etc
+                - name: scripts
+                  mountPath: /fluent-bit/scripts
+                - name: varlog
+                  mountPath: /var/log
+                  readOnly: true
+          volumes:
+            - name: config
+              configMap:
+                name: fluent-bit-config
+                items:
+                  - key: fluent-bit.conf
+                    path: fluent-bit.conf
+                  - key: parsers.conf
+                    path: parsers.conf
+            - name: scripts
+              configMap:
+                name: fluent-bit-config
+                items:
+                  - key: to_clickhouse.lua
+                    path: to_clickhouse.lua
+            - name: varlog
+              hostPath:
+                path: /var/log
+---
+apiVersion: addons.cluster.x-k8s.io/v1beta2
+kind: ClusterResourceSet
+metadata:
+  name: tenant-observability
+  namespace: slurm-lb-e2e-0605a
+spec:
+  strategy: Reconcile
+  clusterSelector:
+    matchLabels:
+      launcher.supergate.io/observability: enabled
+  resources:
+    - name: tenant-observability-agent
+      kind: ConfigMap
+    - name: tenant-observability-clickhouse-auth
+      kind: Secret

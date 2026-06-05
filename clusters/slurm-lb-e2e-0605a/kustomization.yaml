@@ -1,0 +1,188 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base/tenant-infra
+  - ./observability.yaml
+
+patches:
+  - target:
+      kind: Namespace
+      name: NAMESPACE
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-lb-e2e-0605a
+      - op: replace
+        path: /metadata/labels/launcher.supergate.io~1cluster-name
+        value: slurm-lb-e2e-0605a
+
+  - target:
+      kind: KamajiControlPlane
+      name: CLUSTER_NAME-control-plane
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-lb-e2e-0605a-control-plane
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-lb-e2e-0605a
+      - op: replace
+        path: /spec/version
+        value: "v1.30.0"
+      - op: replace
+        path: /spec/network/certSANs/0
+        value: slurm-lb-e2e-0605a.k8s.launcher.internal
+
+  - target:
+      kind: Cluster
+      name: CLUSTER_NAME
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-lb-e2e-0605a
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-lb-e2e-0605a
+      - op: add
+        path: /metadata/labels/launcher.supergate.io~1observability
+        value: enabled
+      - op: replace
+        path: /spec/controlPlaneRef/name
+        value: slurm-lb-e2e-0605a-control-plane
+      - op: replace
+        path: /spec/infrastructureRef/name
+        value: slurm-lb-e2e-0605a
+      - op: add
+        path: /spec/controlPlaneEndpoint
+        value:
+          host: slurm-lb-e2e-0605a.k8s.launcher.internal
+          port: 2225
+
+  - target:
+      kind: OpenStackCluster
+      name: CLUSTER_NAME
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-lb-e2e-0605a
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-lb-e2e-0605a
+      - op: replace
+        path: /spec/identityRef/name
+        value: cloud-config
+      - op: replace
+        path: /spec/identityRef/cloudName
+        value: capi-test
+      - op: replace
+        path: /spec/externalNetwork/id
+        value: fea71d83-27da-4636-9a8b-842f93bcaccf
+      - op: replace
+        path: /spec/managedSecurityGroups
+        value:
+          allowAllInClusterTraffic: false
+          workerNodesSecurityGroupRules:
+            - name: cilium-vxlan-worker-self
+              description: Allow Cilium VXLAN overlay traffic between tenant worker nodes
+              direction: ingress
+              etherType: IPv4
+              protocol: udp
+              portRangeMin: 8472
+              portRangeMax: 8472
+              remoteManagedGroups:
+                - worker
+
+  - target:
+      kind: OpenStackMachineTemplate
+      name: CLUSTER_NAME-worker-mt
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-lb-e2e-0605a-worker-mt
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-lb-e2e-0605a
+      - op: replace
+        path: /spec/template/spec/flavor
+        value: a4v2
+      - op: replace
+        path: /spec/template/spec/image/filter/name
+        value: ubuntu-2404-kube-v1.30.0
+      - op: replace
+        path: /spec/template/spec/sshKeyName
+        value: capi-test
+      - op: replace
+        path: /spec/template/spec/identityRef/name
+        value: cloud-config
+      - op: replace
+        path: /spec/template/spec/identityRef/cloudName
+        value: capi-test
+
+  - target:
+      kind: KubeadmConfigTemplate
+      name: CLUSTER_NAME-worker-config
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-lb-e2e-0605a-worker-config
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-lb-e2e-0605a
+      - op: add
+        path: /spec/template/spec/preKubeadmCommands
+        value:
+          - echo "192.168.81.250 slurm-lb-e2e-0605a.k8s.launcher.internal" >> /etc/hosts
+
+  - target:
+      kind: MachineDeployment
+      name: CLUSTER_NAME-md-0
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: slurm-lb-e2e-0605a-md-0
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-lb-e2e-0605a
+      - op: replace
+        path: /spec/clusterName
+        value: slurm-lb-e2e-0605a
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/clusterName
+        value: slurm-lb-e2e-0605a
+      - op: replace
+        path: /spec/template/spec/version
+        value: v1.30.0
+      - op: replace
+        path: /spec/template/spec/bootstrap/configRef/name
+        value: slurm-lb-e2e-0605a-worker-config
+      - op: replace
+        path: /spec/template/spec/infrastructureRef/name
+        value: slurm-lb-e2e-0605a-worker-mt
+
+  - target:
+      kind: ClusterResourceSet
+      name: cilium-cni
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-lb-e2e-0605a
+
+  - target:
+      kind: ConfigMap
+      name: tenant-admin-rbac
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-lb-e2e-0605a
+
+  - target:
+      kind: ClusterResourceSet
+      name: tenant-admin-rbac
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: slurm-lb-e2e-0605a
