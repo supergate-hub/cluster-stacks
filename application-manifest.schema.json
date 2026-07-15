@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cluster-stacks.local/application-manifest.schema.json",
+  "title": "Application package manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "slug",
+    "ownerName",
+    "publisherName",
+    "name",
+    "categories",
+    "icon",
+    "artifacts",
+    "compatibility",
+    "operational",
+    "content"
+  ],
+  "properties": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+    },
+    "ownerName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "publisherName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "categories": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "icon": {
+      "type": "string",
+      "format": "uri"
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chartPath", "chartVersion", "applicationVersion"],
+      "properties": {
+        "chartPath": {
+          "const": "chart"
+        },
+        "chartVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applicationVersion": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kubernetes"],
+      "properties": {
+        "kubernetes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "operational": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["estimatedInstallTime", "maintenance"],
+      "properties": {
+        "estimatedInstallTime": {
+          "type": "string",
+          "minLength": 1
+        },
+        "maintenance": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "form", "deployment", "licenses"],
+      "properties": {
+        "description": {
+          "const": "README.md"
+        },
+        "form": {
+          "const": "values.form.json"
+        },
+        "deployment": {
+          "const": "graph.yaml"
+        },
+        "licenses": {
+          "const": "licenses.yaml"
+        }
+      }
+    },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["repository", "tag"],
+        "properties": {
+          "repository": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
