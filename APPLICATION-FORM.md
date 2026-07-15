@@ -6,6 +6,9 @@ Status: draft v1
 application package. Application authors write this file; it is not generated
 from Helm `values.yaml`. The UI renders the form automatically after loading the
 file and the deployment backend maps the submitted values through `graph.yaml`.
+When an application exposes advanced Helm configuration, `chart/values.yaml`
+is the canonical editor reference and the form stores only the user's YAML
+overrides, never a copied snapshot of the full defaults.
 
 The format is based on
 [`@gravity-ui/dynamic-forms`](https://gravity-ui.com/libraries/dynamic-forms)
@@ -91,6 +94,7 @@ value.
 | `layoutDescription` | Help text displayed with the field. |
 | `order` | Defines child rendering order. |
 | `generateRandomValueButton` | Allows the UI to generate a random secret. |
+| `inputProps` | Supplies renderer-specific options for platform widgets. |
 
 ### Required widget registry
 
@@ -103,6 +107,7 @@ The initial application packages require the following widgets:
 | `select` | String | Renders the values declared by `enum` and optional `enumNames`. |
 | `switch` | Boolean | Renders a boolean toggle. |
 | `password` | String | Masks input; the mapped graph parameter must be sensitive. |
+| `yaml_input` | String | Opens the platform YAML editor and returns a YAML override document; the mapped graph parameter must be sensitive. |
 
 The UI must register these widgets before the corresponding application forms
 can be used.
@@ -114,6 +119,43 @@ though its child fields are not repeated in the application form:
 {
   "clusterId": "cluster-identifier",
   "name": "cluster-name"
+}
+```
+
+`yaml_input` is a Launcher platform widget, not a renderer supplied by
+`@gravity-ui/dynamic-forms`. The UI must register it explicitly. Its current
+`inputProps` contract is:
+
+| Property | Required | Purpose |
+| --- | --- | --- |
+| `sourcePath` | Yes | Application-relative path to the canonical Helm defaults. It must be `chart/values.yaml`. |
+| `editMode` | Yes | Must be `overrides`; the submitted string contains only user changes. |
+| `buttonText` | No | Label for the button that opens the editor. |
+| `dialogTitle` | No | Title displayed in the editor dialog. |
+| `description` | No | Help text shown in the editor. |
+
+The YAML field should default to an empty mapping (`"{}\n"`). The UI may show
+the canonical values as reference or autocomplete context, but it must not copy
+the entire file into form state. This keeps chart upgrades and editor defaults
+in sync.
+
+Example:
+
+```json
+{
+  "type": "string",
+  "required": true,
+  "defaultValue": "{}\n",
+  "viewSpec": {
+    "type": "yaml_input",
+    "layout": "row",
+    "layoutTitle": "Helm values",
+    "inputProps": {
+      "buttonText": "Customize values",
+      "sourcePath": "chart/values.yaml",
+      "editMode": "overrides"
+    }
+  }
 }
 ```
 
@@ -129,8 +171,8 @@ values.form.json
   -> submitted form object
   -> graph.yaml ui.mapping
   -> typed graph parameters
-  -> helm_chart values
-  -> wrapper chart values
+  -> helm_chart rawValues and structured values
+  -> packaged root chart
 ```
 
 For example, the Headlamp form maps its selected access role as follows:
@@ -162,8 +204,52 @@ Every `ui.mapping` entry must satisfy all of these rules:
 2. The target parameter exists in `graph.yaml`.
 3. Field and parameter types match.
 4. A password or secret field maps to a parameter with `sensitive: true`.
-5. Every parameter that changes Helm values is explicitly mapped; arbitrary
-   unreviewed Helm values are not accepted.
+5. Every guided parameter that changes Helm values is explicitly mapped.
+6. Arbitrary Helm overrides are accepted only when the application explicitly
+   declares the `yaml_input` contract described below.
+
+## Advanced Helm values
+
+Advanced Helm values are opt-in per application. A package that enables them
+must connect the YAML editor, a sensitive string parameter, and the Helm release
+explicitly:
+
+```yaml
+components:
+  helmRelease:
+    type: helm_chart
+    spec:
+      rawValues: "${{ .parameters.rawValues }}"
+      values:
+        notifications:
+          enabled: "${{ .parameters.notificationsEnabled }}"
+
+parameters:
+  rawValues:
+    type: string
+    sensitive: true
+
+ui:
+  mapping:
+    rawValues: setup.compose.data
+```
+
+The deployment backend must parse `rawValues` as a YAML mapping and merge in
+this order, from lowest to highest precedence:
+
+```text
+chart/values.yaml defaults
+  < user rawValues overrides
+  < graph.yaml structured values
+```
+
+Structured values include guided settings, platform-required safeguards, and
+sensitive inputs. They therefore take precedence when the same key appears in
+advanced YAML. The UI should explain this near the editor, and the backend must
+reject invalid YAML or a non-mapping root before Helm rendering.
+
+Argo CD is the canonical advanced-values example. Headlamp and MLflow currently
+use guided forms only.
 
 ## Sensitive values
 
@@ -174,6 +260,10 @@ Sensitive fields must:
 - map to a graph parameter with `sensitive: true`;
 - be redacted from logs, API responses, events, and deployment status;
 - be transmitted only to the component that creates the Helm release.
+
+Because arbitrary YAML may contain credentials, the entire `rawValues`
+parameter is sensitive even when its current content has no secrets. It follows
+the same redaction, transport, and retention rules as password parameters.
 
 The form schema controls presentation only. The UI and backend remain
 responsible for enforcing redaction and storage policy.
@@ -205,6 +295,9 @@ Before submitting an application form:
 - Use clear labels, descriptions, validation errors, and deterministic order.
 - Confirm every form output has a matching `graph.yaml` mapping.
 - Mark every secret parameter as sensitive.
+- Keep `chart/values.yaml` as the only full Helm-default source.
+- For `yaml_input`, submit overrides only and apply structured values last.
+- Commit `Chart.lock` and every declared chart dependency.
 - Run `./validate-applications.sh`.
 
 The existing Headlamp, Argo CD, and MLflow packages are the canonical v1
