@@ -20,7 +20,177 @@ for command in jq rg yq; do
   fi
 done
 
+fail() {
+  echo "$1" >&2
+  exit 1
+}
+
+is_application_directory() {
+  local directory_name="$1"
+  local application
+
+  for application in "${applications[@]}"; do
+    if [[ "$directory_name" == "$application" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+validate_vendored_dependencies() {
+  local application="$1"
+  local chart_dir="$2"
+  local dependency_count
+
+  dependency_count="$(yq eval '.dependencies // [] | length' "$chart_dir/Chart.yaml")"
+  if [[ "$dependency_count" == "0" ]]; then
+    return
+  fi
+
+  if [[ ! -f "$chart_dir/Chart.lock" ]]; then
+    fail "$application: chart dependencies require chart/Chart.lock"
+  fi
+
+  while IFS=$'\t' read -r dependency_name dependency_repository; do
+    local locked_version
+    local locked_repository
+    local unpacked_chart
+    local packaged_chart
+
+    locked_version="$(DEPENDENCY_NAME="$dependency_name" yq eval -r \
+      '.dependencies[] | select(.name == strenv(DEPENDENCY_NAME)) | .version' \
+      "$chart_dir/Chart.lock")"
+    locked_repository="$(DEPENDENCY_NAME="$dependency_name" yq eval -r \
+      '.dependencies[] | select(.name == strenv(DEPENDENCY_NAME)) | .repository' \
+      "$chart_dir/Chart.lock")"
+
+    if [[ -z "$locked_version" || "$locked_version" == "null" ]]; then
+      fail "$application: $dependency_name is missing from chart/Chart.lock"
+    fi
+
+    if [[ "$locked_repository" != "$dependency_repository" ]]; then
+      fail "$application: $dependency_name repository differs between Chart.yaml and Chart.lock"
+    fi
+
+    unpacked_chart="$chart_dir/charts/$dependency_name/Chart.yaml"
+    packaged_chart="$chart_dir/charts/$dependency_name-$locked_version.tgz"
+
+    if [[ -f "$unpacked_chart" ]]; then
+      local unpacked_name
+      local unpacked_version
+
+      unpacked_name="$(yq eval -r '.name' "$unpacked_chart")"
+      unpacked_version="$(yq eval -r '.version' "$unpacked_chart")"
+      if [[ "$unpacked_name" != "$dependency_name" ||
+            "$unpacked_version" != "$locked_version" ]]; then
+        fail "$application: unpacked $dependency_name does not match Chart.lock version $locked_version"
+      fi
+    elif [[ ! -f "$packaged_chart" ]]; then
+      fail "$application: missing vendored dependency $dependency_name@$locked_version"
+    fi
+  done < <(yq eval -r '.dependencies[] | [.name, .repository] | @tsv' "$chart_dir/Chart.yaml")
+}
+
+mapped_parameter_for() {
+  local graph_file="$1"
+  local field_path="$2"
+
+  FORM_FIELD_PATH="$field_path" yq eval -r \
+    '.ui.mapping | to_entries | .[] | select(.value == strenv(FORM_FIELD_PATH)) | .key' \
+    "$graph_file"
+}
+
+validate_form_security() {
+  local application="$1"
+  local package_dir="$2"
+  local form_file="$package_dir/values.form.json"
+  local graph_file="$package_dir/graph.yaml"
+
+  while IFS=$'\x1f' read -r field_path has_default; do
+    local parameter_name
+
+    if [[ "$has_default" == "true" ]]; then
+      fail "$application: password field $field_path must not have a committed default"
+    fi
+
+    parameter_name="$(mapped_parameter_for "$graph_file" "$field_path")"
+    if [[ -z "$parameter_name" || "$parameter_name" == *$'\n'* ]]; then
+      fail "$application: password field $field_path must map to exactly one graph parameter"
+    fi
+
+    if ! PARAMETER_NAME="$parameter_name" yq eval --exit-status \
+      '.parameters[strenv(PARAMETER_NAME)].type == "string" and
+       .parameters[strenv(PARAMETER_NAME)].sensitive == true' \
+      "$graph_file" >/dev/null; then
+      fail "$application: password parameter $parameter_name must be a sensitive string"
+    fi
+  done < <(jq -r '
+    paths(objects) as $path
+    | getpath($path) as $field
+    | select($field.viewSpec?.type? == "password")
+    | [
+        ($path | map(select(. != "properties")) | join(".")),
+        ($field | has("defaultValue") | tostring)
+      ]
+    | join("\u001f")
+  ' "$form_file")
+
+  while IFS=$'\x1f' read -r field_path source_path edit_mode; do
+    local parameter_name
+    local raw_values_reference
+    local expected_reference
+
+    if [[ "$source_path" != "chart/values.yaml" ]]; then
+      fail "$application: YAML editor $field_path must use chart/values.yaml as its source"
+    fi
+
+    if [[ ! -f "$package_dir/$source_path" ]]; then
+      fail "$application: YAML editor source does not exist: $source_path"
+    fi
+
+    if [[ "$edit_mode" != "overrides" ]]; then
+      fail "$application: YAML editor $field_path must use override mode"
+    fi
+
+    parameter_name="$(mapped_parameter_for "$graph_file" "$field_path")"
+    if [[ -z "$parameter_name" || "$parameter_name" == *$'\n'* ]]; then
+      fail "$application: YAML editor $field_path must map to exactly one graph parameter"
+    fi
+
+    if ! PARAMETER_NAME="$parameter_name" yq eval --exit-status \
+      '.parameters[strenv(PARAMETER_NAME)].type == "string" and
+       .parameters[strenv(PARAMETER_NAME)].sensitive == true' \
+      "$graph_file" >/dev/null; then
+      fail "$application: YAML override parameter $parameter_name must be a sensitive string"
+    fi
+
+    raw_values_reference="$(yq eval -r '.components.helmRelease.spec.rawValues' "$graph_file")"
+    expected_reference="\${{ .parameters.${parameter_name} }}"
+    if [[ "$raw_values_reference" != "$expected_reference" ]]; then
+      fail "$application: helmRelease.spec.rawValues must consume parameter $parameter_name"
+    fi
+  done < <(jq -r '
+    paths(objects) as $path
+    | getpath($path) as $field
+    | select($field.viewSpec?.type? == "yaml_input")
+    | [
+        ($path | map(select(. != "properties")) | join(".")),
+        ($field.viewSpec.inputProps.sourcePath // ""),
+        ($field.viewSpec.inputProps.editMode // "")
+      ]
+    | join("\u001f")
+  ' "$form_file")
+}
+
 jq empty "$repo_root/application-manifest.schema.json"
+
+for top_level_directory in "$repo_root"/*/; do
+  directory_name="$(basename "$top_level_directory")"
+  if ! is_application_directory "$directory_name"; then
+    fail "unexpected top-level directory: $directory_name"
+  fi
+done
 
 required_files=(
   manifest.yaml
@@ -48,8 +218,7 @@ for application in "${applications[@]}"; do
 
   for relative_path in "${required_files[@]}"; do
     if [[ ! -f "$package_dir/$relative_path" ]]; then
-      echo "$application: missing $relative_path" >&2
-      exit 1
+      fail "$application: missing $relative_path"
     fi
   done
 
@@ -67,42 +236,37 @@ for application in "${applications[@]}"; do
     .content.licenses == "licenses.yaml" and
     .artifacts.chartPath == "chart"
   ' "$package_dir/manifest.yaml" >/dev/null; then
-    echo "$application: manifest content references do not match the package contract" >&2
-    exit 1
+    fail "$application: manifest content references do not match the package contract"
   fi
 
   manifest_slug="$(yq eval -r '.slug' "$package_dir/manifest.yaml")"
   if [[ "$manifest_slug" != "$application" ]]; then
-    echo "$application: manifest slug must match its directory" >&2
-    exit 1
+    fail "$application: manifest slug must match its directory"
   fi
 
   manifest_chart_version="$(yq eval -r '.artifacts.chartVersion' "$package_dir/manifest.yaml")"
-  wrapper_chart_version="$(yq eval -r '.version' "$package_dir/chart/Chart.yaml")"
-  dependency_chart_version="$(yq eval -r '.dependencies[0].version' "$package_dir/chart/Chart.yaml")"
-  if [[ "$manifest_chart_version" != "$wrapper_chart_version" ||
-        "$manifest_chart_version" != "$dependency_chart_version" ]]; then
-    echo "$application: manifest, wrapper, and dependency chart versions must match" >&2
-    exit 1
+  chart_version="$(yq eval -r '.version' "$package_dir/chart/Chart.yaml")"
+  if [[ "$manifest_chart_version" != "$chart_version" ]]; then
+    fail "$application: manifest and root chart versions must match"
   fi
 
   manifest_application_version="$(yq eval -r '.artifacts.applicationVersion' "$package_dir/manifest.yaml")"
-  wrapper_application_version="$(yq eval -r '.appVersion' "$package_dir/chart/Chart.yaml")"
-  if [[ "$manifest_application_version" != "$wrapper_application_version" ]]; then
-    echo "$application: manifest and wrapper application versions must match" >&2
-    exit 1
+  chart_application_version="$(yq eval -r '.appVersion' "$package_dir/chart/Chart.yaml")"
+  if [[ "$manifest_application_version" != "$chart_application_version" ]]; then
+    fail "$application: manifest and root chart application versions must match"
   fi
+
+  validate_vendored_dependencies "$application" "$package_dir/chart"
+  validate_form_security "$application" "$package_dir"
 
   for section in "${required_sections[@]}"; do
     if ! rg --quiet "^## ${section}$" "$package_dir/README.md"; then
-      echo "$application: README is missing the '$section' section" >&2
-      exit 1
+      fail "$application: README is missing the '$section' section"
     fi
   done
 
   if ! rg --quiet '^### Key features$' "$package_dir/README.md"; then
-    echo "$application: README is missing the 'Key features' subsection" >&2
-    exit 1
+    fail "$application: README is missing the 'Key features' subsection"
   fi
 
   echo "$application: structure valid"
@@ -113,8 +277,7 @@ if [[ "$structure_only" == true ]]; then
 fi
 
 if ! command -v helm >/dev/null 2>&1; then
-  echo "missing required command: helm" >&2
-  exit 1
+  fail "missing required command: helm"
 fi
 
 temporary_dir="$(mktemp -d)"
@@ -124,16 +287,15 @@ export HELM_CONFIG_HOME="$temporary_dir/helm/config"
 export HELM_CACHE_HOME="$temporary_dir/helm/cache"
 export HELM_DATA_HOME="$temporary_dir/helm/data"
 
-helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/ >/dev/null
-helm repo add argo https://argoproj.github.io/argo-helm >/dev/null
-helm repo add community https://community-charts.github.io/helm-charts >/dev/null
-helm repo update >/dev/null
-
 for application in "${applications[@]}"; do
-  package_copy="$temporary_dir/$application"
-  cp -R "$repo_root/$application" "$package_copy"
-  helm dependency update --skip-refresh "$package_copy/chart" >/dev/null
-  helm lint "$package_copy/chart"
+  chart_dir="$repo_root/$application/chart"
+  dependency_output="$(helm dependency list "$chart_dir")"
+  if printf '%s\n' "$dependency_output" | rg --quiet '(missing|wrong version)'; then
+    printf '%s\n' "$dependency_output" >&2
+    fail "$application: vendored chart dependencies are incomplete"
+  fi
+
+  helm lint --with-subcharts "$chart_dir"
 
   template_arguments=()
   case "$application" in
@@ -144,22 +306,22 @@ for application in "${applications[@]}"; do
       ;;
     argo-cd)
       template_arguments+=(
-        --set argo-cd.applicationSet.enabled=true
-        --set argo-cd.notifications.enabled=false
+        --set-string adminPassword=validation-password
+        --set notifications.enabled=false
       )
       ;;
     mlflow)
       template_arguments+=(
-        --set mlflow.auth.enabled=true
-        --set-string mlflow.auth.adminUsername=admin
-        --set-string mlflow.auth.adminPassword=validation-password
-        --set-string mlflow.postgresql.primary.persistence.size=8Gi
-        --set-string mlflow.minio.persistence.size=20Gi
+        --set auth.enabled=true
+        --set-string auth.adminUsername=admin
+        --set-string auth.adminPassword=validation-password
+        --set-string postgresql.primary.persistence.size=8Gi
+        --set-string minio.persistence.size=20Gi
       )
       ;;
   esac
 
-  helm template "$application" "$package_copy/chart" \
+  helm template "$application" "$chart_dir" \
     --namespace "$application" \
     "${template_arguments[@]}" >/dev/null
   echo "$application: chart valid"
