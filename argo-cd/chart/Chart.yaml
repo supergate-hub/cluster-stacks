@@ -1,0 +1,12 @@
+apiVersion: v2
+name: catalog-argo-cd
+description: Thin wrapper for the Argo CD Helm chart
+type: application
+version: "10.1.3"
+appVersion: "v3.4.5"
+kubeVersion: ">=1.25.0-0"
+icon: https://argo-cd.readthedocs.io/en/stable/assets/logo.png
+dependencies:
+  - name: argo-cd
+    version: "10.1.3"
+    repository: https://argoproj.github.io/argo-helm

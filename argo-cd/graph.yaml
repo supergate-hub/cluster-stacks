@@ -1,0 +1,54 @@
+releaseType: k8s
+components:
+  cluster:
+    type: existing_cluster
+    spec:
+      id: "${{ .parameters.clusterId }}"
+      name: "${{ .parameters.clusterName }}"
+
+  helmRelease:
+    type: helm_chart
+    spec:
+      clusterId: "${{ .components.cluster.state.id }}"
+      chartPath: chart
+      releaseName: "${{ .parameters.releaseName }}"
+      releaseNamespace: "${{ .parameters.releaseNamespace }}"
+      createNamespace: true
+      values:
+        argo-cd:
+          applicationSet:
+            enabled: "${{ .parameters.applicationSetEnabled }}"
+          notifications:
+            enabled: "${{ .parameters.notificationsEnabled }}"
+    dependencies:
+      components:
+        cluster: {}
+
+parameters:
+  clusterId:
+    type: string
+    description: Existing Kubernetes cluster identifier.
+  clusterName:
+    type: string
+    description: Existing Kubernetes cluster name.
+  releaseName:
+    type: string
+    description: Helm release name.
+  releaseNamespace:
+    type: string
+    description: Helm release namespace.
+  applicationSetEnabled:
+    type: boolean
+    description: Whether to install the ApplicationSet controller.
+  notificationsEnabled:
+    type: boolean
+    description: Whether to install the notifications controller.
+
+ui:
+  mapping:
+    clusterId: targetCluster.clusterId
+    clusterName: targetCluster.name
+    releaseName: general.appname
+    releaseNamespace: general.namespace
+    applicationSetEnabled: configuration.applicationSetEnabled
+    notificationsEnabled: configuration.notificationsEnabled

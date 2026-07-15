@@ -1,0 +1,9 @@
+licenses:
+  - component: Argo CD
+    version: "3.4.5"
+    license: Apache-2.0
+    source: https://github.com/argoproj/argo-cd/blob/master/LICENSE
+  - component: Argo CD Helm chart
+    version: "10.1.3"
+    license: Apache-2.0
+    source: https://github.com/argoproj/argo-helm/blob/main/LICENSE

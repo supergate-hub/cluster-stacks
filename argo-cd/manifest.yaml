@@ -1,0 +1,25 @@
+slug: argo-cd
+ownerName: Argo Project
+publisherName: Platform Team
+name: Argo CD
+categories:
+  - continuous-delivery
+  - orchestration
+icon: https://argo-cd.readthedocs.io/en/stable/assets/logo.png
+artifacts:
+  chartPath: chart
+  chartVersion: "10.1.3"
+  applicationVersion: "v3.4.5"
+compatibility:
+  kubernetes: ">=1.29"
+operational:
+  estimatedInstallTime: 10 minutes
+  maintenance: Self-managed
+content:
+  description: README.md
+  form: values.form.json
+  deployment: graph.yaml
+  licenses: licenses.yaml
+images:
+  - repository: quay.io/argoproj/argocd
+    tag: v3.4.5

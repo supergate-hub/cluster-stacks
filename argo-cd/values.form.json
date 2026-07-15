@@ -1,0 +1,93 @@
+{
+  "type": "object",
+  "required": true,
+  "defaultValue": {},
+  "viewSpec": {
+    "type": "base",
+    "order": [
+      "targetCluster",
+      "general",
+      "configuration"
+    ]
+  },
+  "properties": {
+    "targetCluster": {
+      "type": "object",
+      "required": true,
+      "viewSpec": {
+        "type": "cluster_select",
+        "layoutTitle": "Kubernetes cluster"
+      }
+    },
+    "general": {
+      "type": "object",
+      "required": true,
+      "defaultValue": {},
+      "viewSpec": {
+        "type": "base",
+        "layout": "section",
+        "layoutTitle": "General"
+      },
+      "properties": {
+        "appname": {
+          "type": "string",
+          "required": true,
+          "defaultValue": "argo-cd",
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+          "patternError": "Use lower-case letters, numbers, and hyphens; start and end with a letter or number.",
+          "viewSpec": {
+            "type": "base",
+            "layout": "row",
+            "layoutTitle": "Application name"
+          }
+        },
+        "namespace": {
+          "type": "string",
+          "required": true,
+          "defaultValue": "argo-cd",
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+          "patternError": "Use lower-case letters, numbers, and hyphens; start and end with a letter or number.",
+          "viewSpec": {
+            "type": "base",
+            "layout": "row",
+            "layoutTitle": "Namespace"
+          }
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "required": true,
+      "defaultValue": {},
+      "viewSpec": {
+        "type": "base",
+        "layout": "section",
+        "layoutTitle": "Controllers"
+      },
+      "properties": {
+        "applicationSetEnabled": {
+          "type": "boolean",
+          "required": true,
+          "defaultValue": true,
+          "viewSpec": {
+            "type": "switch",
+            "layout": "row",
+            "layoutTitle": "ApplicationSet controller",
+            "layoutDescription": "Generate multiple applications from cluster, Git, list, or matrix inputs."
+          }
+        },
+        "notificationsEnabled": {
+          "type": "boolean",
+          "required": true,
+          "defaultValue": false,
+          "viewSpec": {
+            "type": "switch",
+            "layout": "row",
+            "layoutTitle": "Notifications controller",
+            "layoutDescription": "Install notification processing; destinations are configured after installation."
+          }
+        }
+      }
+    }
+  }
+}

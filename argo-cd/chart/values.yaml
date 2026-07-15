@@ -1,0 +1,13 @@
+argo-cd:
+  crds:
+    install: true
+    keep: true
+  dex:
+    enabled: false
+  applicationSet:
+    enabled: true
+  notifications:
+    enabled: false
+  server:
+    service:
+      type: ClusterIP
