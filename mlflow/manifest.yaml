@@ -23,3 +23,11 @@ content:
 images:
   - repository: docker.io/burakince/mlflow
     tag: "3.14.0"
+  - repository: busybox
+    tag: "1.38.0"
+  - repository: registry-1.docker.io/bitnamilegacy/postgresql
+    tag: latest
+  - repository: quay.io/minio/minio
+    tag: RELEASE.2024-12-18T13-15-44Z
+  - repository: quay.io/minio/mc
+    tag: RELEASE.2024-11-21T17-21-54Z

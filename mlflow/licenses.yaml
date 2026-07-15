@@ -8,10 +8,22 @@ licenses:
     license: MIT
     source: https://github.com/community-charts/helm-charts/blob/main/LICENSE
   - component: PostgreSQL
-    version: "18.7.6 chart dependency"
+    version: "18.4.0"
     license: PostgreSQL
     source: https://www.postgresql.org/about/licence/
+  - component: PostgreSQL Helm chart
+    version: "18.7.6"
+    license: Apache-2.0
+    source: https://github.com/bitnami/charts/tree/main/bitnami/postgresql
+  - component: MySQL Helm chart
+    version: "14.0.3"
+    license: Apache-2.0
+    source: https://github.com/bitnami/charts/tree/main/bitnami/mysql
   - component: MinIO
-    version: "5.4.0 chart dependency"
+    version: "RELEASE.2024-12-18T13-15-44Z"
     license: AGPL-3.0
     source: https://github.com/minio/minio/blob/master/LICENSE
+  - component: MinIO Helm chart
+    version: "5.4.0"
+    license: AGPL-3.0
+    source: https://github.com/minio/minio/tree/master/helm/minio

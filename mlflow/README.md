@@ -81,5 +81,6 @@ Chart-specific problems should be reported to the chart source repository.
 ## Legal
 
 The package includes components under Apache-2.0, MIT, PostgreSQL, and
-AGPL-3.0 licenses. See `licenses.yaml` for the component-level records and
-source links.
+AGPL-3.0 licenses. Its vendored dependencies also contain the disabled MySQL
+chart so the pinned upstream package remains complete. See `licenses.yaml` for
+the component-level records and source links.

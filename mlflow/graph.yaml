@@ -15,20 +15,19 @@ components:
       releaseNamespace: "${{ .parameters.releaseNamespace }}"
       createNamespace: true
       values:
-        mlflow:
-          auth:
-            enabled: true
-            adminUsername: "${{ .parameters.adminUsername }}"
-            adminPassword: "${{ .parameters.adminPassword }}"
-          postgresql:
-            primary:
-              persistence:
-                storageClass: "${{ .parameters.storageClassName }}"
-                size: "${{ .parameters.databaseStorageSize }}"
-          minio:
+        auth:
+          enabled: true
+          adminUsername: "${{ .parameters.adminUsername }}"
+          adminPassword: "${{ .parameters.adminPassword }}"
+        postgresql:
+          primary:
             persistence:
               storageClass: "${{ .parameters.storageClassName }}"
-              size: "${{ .parameters.artifactStorageSize }}"
+              size: "${{ .parameters.databaseStorageSize }}"
+        minio:
+          persistence:
+            storageClass: "${{ .parameters.storageClassName }}"
+            size: "${{ .parameters.artifactStorageSize }}"
     dependencies:
       components:
         cluster: {}
