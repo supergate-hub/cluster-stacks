@@ -25,6 +25,7 @@ cluster-stacks/
 │   └── chart/
 ├── argo-cd/
 ├── mlflow/
+├── APPLICATION-FORM.md
 ├── application-manifest.schema.json
 ├── validate-applications.sh
 └── README.md
@@ -33,6 +34,9 @@ cluster-stacks/
 Each application directory is self-contained. Its metadata, detail-page
 content, installation form, deployment graph, license data, and thin Helm
 wrapper are versioned together.
+
+See [Application form contract](APPLICATION-FORM.md) for the supported form
+keywords, widget registry, mapping rules, and sensitive-value requirements.
 
 ## Installation flow
 
