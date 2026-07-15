@@ -1,0 +1,11 @@
+apiVersion: v2
+name: catalog-headlamp
+description: Thin wrapper for the Headlamp Helm chart
+type: application
+version: "0.43.0"
+appVersion: "0.43.0"
+icon: https://raw.githubusercontent.com/kubernetes-sigs/headlamp/main/docs/headlamp_light.svg
+dependencies:
+  - name: headlamp
+    version: "0.43.0"
+    repository: https://kubernetes-sigs.github.io/headlamp/

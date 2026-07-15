@@ -1,0 +1,22 @@
+headlamp:
+  replicaCount: 1
+  config:
+    inCluster: true
+    unsafeUseServiceAccountToken: false
+  serviceAccount:
+    create: true
+  clusterRoleBinding:
+    create: true
+    clusterRoleName: view
+  service:
+    type: ClusterIP
+    port: 80
+  ingress:
+    enabled: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

@@ -1,0 +1,9 @@
+licenses:
+  - component: Headlamp
+    version: "0.43.0"
+    license: Apache-2.0
+    source: https://github.com/kubernetes-sigs/headlamp/blob/main/LICENSE
+  - component: Headlamp Helm chart
+    version: "0.43.0"
+    license: Apache-2.0
+    source: https://github.com/kubernetes-sigs/headlamp/blob/main/LICENSE

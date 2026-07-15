@@ -1,0 +1,51 @@
+releaseType: k8s
+components:
+  cluster:
+    type: existing_cluster
+    spec:
+      id: "${{ .parameters.clusterId }}"
+      name: "${{ .parameters.clusterName }}"
+
+  helmRelease:
+    type: helm_chart
+    spec:
+      clusterId: "${{ .components.cluster.state.id }}"
+      chartPath: chart
+      releaseName: "${{ .parameters.releaseName }}"
+      releaseNamespace: "${{ .parameters.releaseNamespace }}"
+      createNamespace: true
+      values:
+        headlamp:
+          clusterRoleBinding:
+            clusterRoleName: "${{ .parameters.clusterRoleName }}"
+    dependencies:
+      components:
+        cluster: {}
+
+parameters:
+  clusterId:
+    type: string
+    description: Existing Kubernetes cluster identifier.
+  clusterName:
+    type: string
+    description: Existing Kubernetes cluster name.
+  releaseName:
+    type: string
+    description: Helm release name.
+  releaseNamespace:
+    type: string
+    description: Helm release namespace.
+  clusterRoleName:
+    type: string
+    description: ClusterRole bound to the Headlamp service account.
+    allowedValues:
+      - view
+      - cluster-admin
+
+ui:
+  mapping:
+    clusterId: targetCluster.clusterId
+    clusterName: targetCluster.name
+    releaseName: general.appname
+    releaseNamespace: general.namespace
+    clusterRoleName: configuration.clusterRoleName

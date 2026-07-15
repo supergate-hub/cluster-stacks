@@ -1,0 +1,25 @@
+slug: headlamp
+ownerName: Kubernetes SIGs
+publisherName: Platform Team
+name: Headlamp
+categories:
+  - cluster-management
+  - observability
+icon: https://raw.githubusercontent.com/kubernetes-sigs/headlamp/main/docs/headlamp_light.svg
+artifacts:
+  chartPath: chart
+  chartVersion: "0.43.0"
+  applicationVersion: "0.43.0"
+compatibility:
+  kubernetes: ">=1.29"
+operational:
+  estimatedInstallTime: 5 minutes
+  maintenance: Self-managed
+content:
+  description: README.md
+  form: values.form.json
+  deployment: graph.yaml
+  licenses: licenses.yaml
+images:
+  - repository: ghcr.io/headlamp-k8s/headlamp
+    tag: "0.43.0"
