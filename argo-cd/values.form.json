@@ -7,7 +7,8 @@
     "order": [
       "targetCluster",
       "general",
-      "configuration"
+      "configuration",
+      "setup"
     ]
   },
   "properties": {
@@ -52,6 +53,19 @@
             "layout": "row",
             "layoutTitle": "Namespace"
           }
+        },
+        "adminPassword": {
+          "type": "string",
+          "required": false,
+          "pattern": "^$|^.{12,}$",
+          "patternError": "Leave empty or use at least 12 characters.",
+          "viewSpec": {
+            "type": "password",
+            "layout": "row",
+            "layoutTitle": "Administrator password",
+            "layoutDescription": "Leave empty to use Argo CD's generated initial password. A supplied password is stored only as a bcrypt hash.",
+            "generateRandomValueButton": true
+          }
         }
       }
     },
@@ -65,17 +79,6 @@
         "layoutTitle": "Controllers"
       },
       "properties": {
-        "applicationSetEnabled": {
-          "type": "boolean",
-          "required": true,
-          "defaultValue": true,
-          "viewSpec": {
-            "type": "switch",
-            "layout": "row",
-            "layoutTitle": "ApplicationSet controller",
-            "layoutDescription": "Generate multiple applications from cluster, Git, list, or matrix inputs."
-          }
-        },
         "notificationsEnabled": {
           "type": "boolean",
           "required": true,
@@ -85,6 +88,45 @@
             "layout": "row",
             "layoutTitle": "Notifications controller",
             "layoutDescription": "Install notification processing; destinations are configured after installation."
+          }
+        }
+      }
+    },
+    "setup": {
+      "type": "object",
+      "required": true,
+      "defaultValue": {},
+      "viewSpec": {
+        "type": "base",
+        "layout": "section",
+        "layoutTitle": "Advanced configuration"
+      },
+      "properties": {
+        "compose": {
+          "type": "object",
+          "required": true,
+          "defaultValue": {},
+          "viewSpec": {
+            "type": "base"
+          },
+          "properties": {
+            "data": {
+              "type": "string",
+              "required": true,
+              "defaultValue": "{}\n",
+              "viewSpec": {
+                "type": "yaml_input",
+                "layout": "row",
+                "layoutTitle": "Helm values",
+                "inputProps": {
+                  "buttonText": "Customize values",
+                  "dialogTitle": "Argo CD Helm values",
+                  "description": "Edit only the values you want to override. Guided settings take precedence.",
+                  "sourcePath": "chart/values.yaml",
+                  "editMode": "overrides"
+                }
+              }
+            }
           }
         }
       }

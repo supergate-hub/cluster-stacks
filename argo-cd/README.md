@@ -15,8 +15,8 @@ the declared state automatically or after approval.
 - Manage applications through a web UI, CLI, API, or Kubernetes resources.
 
 This package installs a single-cluster, non-HA configuration. The ApplicationSet
-controller is enabled by default, while notifications and Dex are disabled to
-keep the initial footprint small.
+controller is included by the chart, while notifications and Dex are disabled
+by default to keep the initial footprint small.
 
 ## Short description
 
@@ -26,9 +26,9 @@ Declarative GitOps continuous delivery and drift reconciliation for Kubernetes.
 
 1. Select an existing Kubernetes cluster.
 2. Keep the default release name and namespace, or enter DNS-compatible values.
-3. Choose whether to install the ApplicationSet and notifications controllers.
-4. Install the application and wait for all Argo CD workloads to become ready.
-5. Retrieve the generated initial administrator password.
+3. Optionally set an administrator password and enable notifications.
+4. Use **Customize values** only when you need settings outside the guided form.
+5. Install the application and wait for all Argo CD workloads to become ready.
 
 For the default release and namespace:
 
@@ -37,8 +37,15 @@ kubectl -n argo-cd get secret argo-cd-initial-admin-secret \
   -o jsonpath="{.data.password}" | base64 -d
 ```
 
-The login username is `admin`. Change the password after the first login and
-configure repository credentials through Argo CD rather than this catalog form.
+The command above is needed only when the administrator password was left empty.
+The login username is `admin`. Change generated passwords after the first login
+and configure repository credentials through Argo CD rather than this catalog
+form.
+
+Advanced settings are stored as YAML overrides. The chart's `values.yaml` is the
+canonical reference shown by the editor; it is not copied into the form file.
+Guided settings for the administrator password, notifications, Dex, and the
+private server service take precedence over advanced YAML.
 
 ## Usage
 

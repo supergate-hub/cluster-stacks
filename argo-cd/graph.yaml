@@ -14,12 +14,16 @@ components:
       releaseName: "${{ .parameters.releaseName }}"
       releaseNamespace: "${{ .parameters.releaseNamespace }}"
       createNamespace: true
+      rawValues: "${{ .parameters.rawValues }}"
       values:
-        argo-cd:
-          applicationSet:
-            enabled: "${{ .parameters.applicationSetEnabled }}"
-          notifications:
-            enabled: "${{ .parameters.notificationsEnabled }}"
+        adminPassword: "${{ .parameters.adminPassword }}"
+        dex:
+          enabled: false
+        notifications:
+          enabled: "${{ .parameters.notificationsEnabled }}"
+        server:
+          service:
+            type: ClusterIP
     dependencies:
       components:
         cluster: {}
@@ -37,12 +41,17 @@ parameters:
   releaseNamespace:
     type: string
     description: Helm release namespace.
-  applicationSetEnabled:
-    type: boolean
-    description: Whether to install the ApplicationSet controller.
+  adminPassword:
+    type: string
+    sensitive: true
+    description: Optional plaintext admin password; the chart stores only its bcrypt hash.
   notificationsEnabled:
     type: boolean
     description: Whether to install the notifications controller.
+  rawValues:
+    type: string
+    sensitive: true
+    description: Helm values YAML overrides from advanced configuration.
 
 ui:
   mapping:
@@ -50,5 +59,6 @@ ui:
     clusterName: targetCluster.name
     releaseName: general.appname
     releaseNamespace: general.namespace
-    applicationSetEnabled: configuration.applicationSetEnabled
+    adminPassword: general.adminPassword
     notificationsEnabled: configuration.notificationsEnabled
+    rawValues: setup.compose.data

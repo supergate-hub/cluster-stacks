@@ -23,3 +23,5 @@ content:
 images:
   - repository: quay.io/argoproj/argocd
     tag: v3.4.5
+  - repository: ecr-public.aws.com/docker/library/redis
+    tag: 8.2.3-alpine
