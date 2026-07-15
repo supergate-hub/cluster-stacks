@@ -1,0 +1,145 @@
+{
+  "type": "object",
+  "required": true,
+  "defaultValue": {},
+  "viewSpec": {
+    "type": "base",
+    "order": [
+      "targetCluster",
+      "general",
+      "authentication",
+      "storage"
+    ]
+  },
+  "properties": {
+    "targetCluster": {
+      "type": "object",
+      "required": true,
+      "viewSpec": {
+        "type": "cluster_select",
+        "layoutTitle": "Kubernetes cluster"
+      }
+    },
+    "general": {
+      "type": "object",
+      "required": true,
+      "defaultValue": {},
+      "viewSpec": {
+        "type": "base",
+        "layout": "section",
+        "layoutTitle": "General"
+      },
+      "properties": {
+        "appname": {
+          "type": "string",
+          "required": true,
+          "defaultValue": "mlflow",
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+          "patternError": "Use lower-case letters, numbers, and hyphens; start and end with a letter or number.",
+          "viewSpec": {
+            "type": "base",
+            "layout": "row",
+            "layoutTitle": "Application name"
+          }
+        },
+        "namespace": {
+          "type": "string",
+          "required": true,
+          "defaultValue": "mlflow",
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+          "patternError": "Use lower-case letters, numbers, and hyphens; start and end with a letter or number.",
+          "viewSpec": {
+            "type": "base",
+            "layout": "row",
+            "layoutTitle": "Namespace"
+          }
+        }
+      }
+    },
+    "authentication": {
+      "type": "object",
+      "required": true,
+      "defaultValue": {},
+      "viewSpec": {
+        "type": "base",
+        "layout": "section",
+        "layoutTitle": "Authentication"
+      },
+      "properties": {
+        "adminUsername": {
+          "type": "string",
+          "required": true,
+          "defaultValue": "admin",
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "patternError": "Use letters, numbers, dots, underscores, or hyphens.",
+          "viewSpec": {
+            "type": "base",
+            "layout": "row",
+            "layoutTitle": "Administrator username"
+          }
+        },
+        "adminPassword": {
+          "type": "string",
+          "required": true,
+          "minLength": 12,
+          "viewSpec": {
+            "type": "password",
+            "layout": "row",
+            "layoutTitle": "Administrator password",
+            "layoutDescription": "Use at least 12 characters. The value is handled as a secret.",
+            "generateRandomValueButton": true
+          }
+        }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "required": true,
+      "defaultValue": {},
+      "viewSpec": {
+        "type": "base",
+        "layout": "section",
+        "layoutTitle": "Storage"
+      },
+      "properties": {
+        "storageClassName": {
+          "type": "string",
+          "required": false,
+          "defaultValue": "",
+          "pattern": "^$|^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$",
+          "patternError": "Enter a valid StorageClass name or leave the field empty to use the cluster default.",
+          "viewSpec": {
+            "type": "base",
+            "layout": "row",
+            "layoutTitle": "StorageClass",
+            "layoutDescription": "Leave empty to use the cluster's default StorageClass."
+          }
+        },
+        "databaseStorageSize": {
+          "type": "string",
+          "required": true,
+          "defaultValue": "8Gi",
+          "pattern": "^[1-9][0-9]*(Mi|Gi|Ti)$",
+          "patternError": "Use a positive Kubernetes binary quantity such as 8Gi.",
+          "viewSpec": {
+            "type": "base",
+            "layout": "row",
+            "layoutTitle": "Database volume size"
+          }
+        },
+        "artifactStorageSize": {
+          "type": "string",
+          "required": true,
+          "defaultValue": "20Gi",
+          "pattern": "^[1-9][0-9]*(Mi|Gi|Ti)$",
+          "patternError": "Use a positive Kubernetes binary quantity such as 20Gi.",
+          "viewSpec": {
+            "type": "base",
+            "layout": "row",
+            "layoutTitle": "Artifact volume size"
+          }
+        }
+      }
+    }
+  }
+}

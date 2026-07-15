@@ -1,0 +1,17 @@
+licenses:
+  - component: MLflow
+    version: "3.14.0"
+    license: Apache-2.0
+    source: https://github.com/mlflow/mlflow/blob/master/LICENSE.txt
+  - component: MLflow Helm chart
+    version: "1.11.2"
+    license: MIT
+    source: https://github.com/community-charts/helm-charts/blob/main/LICENSE
+  - component: PostgreSQL
+    version: "18.7.6 chart dependency"
+    license: PostgreSQL
+    source: https://www.postgresql.org/about/licence/
+  - component: MinIO
+    version: "5.4.0 chart dependency"
+    license: AGPL-3.0
+    source: https://github.com/minio/minio/blob/master/LICENSE

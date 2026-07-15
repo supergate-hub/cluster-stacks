@@ -1,0 +1,45 @@
+mlflow:
+  replicaCount: 1
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 80
+  telemetry:
+    enabled: false
+  backendStore:
+    databaseMigration: true
+    databaseConnectionCheck: true
+  postgresql:
+    enabled: true
+    architecture: standalone
+    primary:
+      persistence:
+        enabled: true
+        size: 8Gi
+    auth:
+      username: mlflow
+      password: ""
+      database: mlflow
+  artifactRoot:
+    proxiedArtifactStorage: true
+    s3:
+      enabled: true
+      bucket: mlflow
+  minio:
+    enabled: true
+    mode: standalone
+    buckets:
+      - name: mlflow
+        policy: none
+        purge: false
+    persistence:
+      enabled: true
+      size: 20Gi
+  auth:
+    enabled: false
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi

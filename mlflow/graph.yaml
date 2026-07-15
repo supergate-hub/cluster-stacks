@@ -1,0 +1,76 @@
+releaseType: k8s
+components:
+  cluster:
+    type: existing_cluster
+    spec:
+      id: "${{ .parameters.clusterId }}"
+      name: "${{ .parameters.clusterName }}"
+
+  helmRelease:
+    type: helm_chart
+    spec:
+      clusterId: "${{ .components.cluster.state.id }}"
+      chartPath: chart
+      releaseName: "${{ .parameters.releaseName }}"
+      releaseNamespace: "${{ .parameters.releaseNamespace }}"
+      createNamespace: true
+      values:
+        mlflow:
+          auth:
+            enabled: true
+            adminUsername: "${{ .parameters.adminUsername }}"
+            adminPassword: "${{ .parameters.adminPassword }}"
+          postgresql:
+            primary:
+              persistence:
+                storageClass: "${{ .parameters.storageClassName }}"
+                size: "${{ .parameters.databaseStorageSize }}"
+          minio:
+            persistence:
+              storageClass: "${{ .parameters.storageClassName }}"
+              size: "${{ .parameters.artifactStorageSize }}"
+    dependencies:
+      components:
+        cluster: {}
+
+parameters:
+  clusterId:
+    type: string
+    description: Existing Kubernetes cluster identifier.
+  clusterName:
+    type: string
+    description: Existing Kubernetes cluster name.
+  releaseName:
+    type: string
+    description: Helm release name.
+  releaseNamespace:
+    type: string
+    description: Helm release namespace.
+  adminUsername:
+    type: string
+    description: MLflow administrator username.
+  adminPassword:
+    type: string
+    sensitive: true
+    description: MLflow administrator password.
+  storageClassName:
+    type: string
+    description: StorageClass for database and artifact volumes; empty uses the cluster default.
+  databaseStorageSize:
+    type: string
+    description: PostgreSQL persistent volume size.
+  artifactStorageSize:
+    type: string
+    description: MinIO persistent volume size.
+
+ui:
+  mapping:
+    clusterId: targetCluster.clusterId
+    clusterName: targetCluster.name
+    releaseName: general.appname
+    releaseNamespace: general.namespace
+    adminUsername: authentication.adminUsername
+    adminPassword: authentication.adminPassword
+    storageClassName: storage.storageClassName
+    databaseStorageSize: storage.databaseStorageSize
+    artifactStorageSize: storage.artifactStorageSize

@@ -1,0 +1,25 @@
+slug: mlflow
+ownerName: MLflow Project
+publisherName: Platform Team
+name: MLflow
+categories:
+  - machine-learning
+  - experiment-tracking
+icon: https://raw.githubusercontent.com/mlflow/mlflow/master/assets/logo.svg
+artifacts:
+  chartPath: chart
+  chartVersion: "1.11.2"
+  applicationVersion: "3.14.0"
+compatibility:
+  kubernetes: ">=1.29"
+operational:
+  estimatedInstallTime: 15 minutes
+  maintenance: Self-managed
+content:
+  description: README.md
+  form: values.form.json
+  deployment: graph.yaml
+  licenses: licenses.yaml
+images:
+  - repository: docker.io/burakince/mlflow
+    tag: "3.14.0"

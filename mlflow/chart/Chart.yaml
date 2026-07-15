@@ -1,0 +1,12 @@
+apiVersion: v2
+name: catalog-mlflow
+description: Thin wrapper for the MLflow Helm chart
+type: application
+version: "1.11.2"
+appVersion: "3.14.0"
+kubeVersion: ">=1.16.0-0"
+icon: https://raw.githubusercontent.com/mlflow/mlflow/master/assets/logo.svg
+dependencies:
+  - name: mlflow
+    version: "1.11.2"
+    repository: https://community-charts.github.io/helm-charts
