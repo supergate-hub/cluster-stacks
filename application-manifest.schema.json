@@ -36,9 +36,38 @@
     "categories": {
       "type": "array",
       "minItems": 1,
+      "maxItems": 2,
       "items": {
-        "type": "string",
-        "minLength": 1
+        "oneOf": [
+          {
+            "const": "ai-ml",
+            "title": "AI & ML"
+          },
+          {
+            "const": "development",
+            "title": "Development"
+          },
+          {
+            "const": "serving",
+            "title": "Serving"
+          },
+          {
+            "const": "orchestration",
+            "title": "Orchestration"
+          },
+          {
+            "const": "observability",
+            "title": "Observability"
+          },
+          {
+            "const": "data",
+            "title": "Data"
+          },
+          {
+            "const": "infrastructure",
+            "title": "Infrastructure"
+          }
+        ]
       },
       "uniqueItems": true
     },

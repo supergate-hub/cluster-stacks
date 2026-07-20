@@ -38,6 +38,19 @@ is_application_directory() {
   return 1
 }
 
+is_allowed_category() {
+  local candidate="$1"
+  local allowed_category
+
+  for allowed_category in "${allowed_categories[@]}"; do
+    if [[ "$candidate" == "$allowed_category" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 validate_vendored_dependencies() {
   local application="$1"
   local chart_dir="$2"
@@ -185,6 +198,17 @@ validate_form_security() {
 
 jq empty "$repo_root/application-manifest.schema.json"
 
+allowed_categories=()
+while IFS= read -r category; do
+  allowed_categories+=("$category")
+done < <(jq -r '.properties.categories.items.oneOf[].const' \
+  "$repo_root/application-manifest.schema.json")
+
+minimum_categories="$(jq -r '.properties.categories.minItems' \
+  "$repo_root/application-manifest.schema.json")"
+maximum_categories="$(jq -r '.properties.categories.maxItems' \
+  "$repo_root/application-manifest.schema.json")"
+
 for top_level_directory in "$repo_root"/*/; do
   directory_name="$(basename "$top_level_directory")"
   if ! is_application_directory "$directory_name"; then
@@ -243,6 +267,22 @@ for application in "${applications[@]}"; do
   if [[ "$manifest_slug" != "$application" ]]; then
     fail "$application: manifest slug must match its directory"
   fi
+
+  category_count="$(yq eval '.categories | length' "$package_dir/manifest.yaml")"
+  if (( category_count < minimum_categories || category_count > maximum_categories )); then
+    fail "$application: categories must contain between $minimum_categories and $maximum_categories entries"
+  fi
+
+  seen_categories="|"
+  while IFS= read -r category; do
+    if ! is_allowed_category "$category"; then
+      fail "$application: unsupported category: $category"
+    fi
+    if [[ "$seen_categories" == *"|$category|"* ]]; then
+      fail "$application: duplicate category: $category"
+    fi
+    seen_categories="${seen_categories}${category}|"
+  done < <(yq eval -r '.categories[]' "$package_dir/manifest.yaml")
 
   manifest_chart_version="$(yq eval -r '.artifacts.chartVersion' "$package_dir/manifest.yaml")"
   chart_version="$(yq eval -r '.version' "$package_dir/chart/Chart.yaml")"

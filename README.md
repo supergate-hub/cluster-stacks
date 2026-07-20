@@ -12,6 +12,25 @@ Every top-level directory is a deployable application package. Repository-wide
 schema, validation, and overview files stay at the repository root so catalog
 scanners can treat directories as applications without exceptions.
 
+## Category taxonomy
+
+Application categories use a small product-area taxonomy rather than
+application-specific tags. A manifest must select one primary category and may
+select one supporting category.
+
+| Manifest value | Display label | Scope |
+| --- | --- | --- |
+| `ai-ml` | AI & ML | Model development, training, agents, and AI lifecycle tools. |
+| `development` | Development | IDEs, notebooks, CI/CD, and developer tooling. |
+| `serving` | Serving | Model inference and application-serving runtimes. |
+| `orchestration` | Orchestration | Delivery, workflows, scheduling, and control planes. |
+| `observability` | Observability | Metrics, logs, traces, dashboards, and diagnostics. |
+| `data` | Data | Databases, storage, streaming, and data lifecycle tools. |
+| `infrastructure` | Infrastructure | Cluster, networking, security, and platform operations. |
+
+Do not create a new category for an individual technology or use case. Add a
+category only when a durable product area cannot fit this taxonomy.
+
 ## Structure
 
 ```text

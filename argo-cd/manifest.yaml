@@ -3,8 +3,8 @@ ownerName: Argo Project
 publisherName: Platform Team
 name: Argo CD
 categories:
-  - continuous-delivery
   - orchestration
+  - development
 icon: https://argo-cd.readthedocs.io/en/stable/assets/logo.png
 artifacts:
   chartPath: chart

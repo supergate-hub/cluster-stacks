@@ -3,8 +3,8 @@ ownerName: MLflow Project
 publisherName: Platform Team
 name: MLflow
 categories:
-  - machine-learning
-  - experiment-tracking
+  - ai-ml
+  - data
 icon: https://raw.githubusercontent.com/mlflow/mlflow/master/assets/logo.svg
 artifacts:
   chartPath: chart

@@ -3,7 +3,7 @@ ownerName: Kubernetes SIGs
 publisherName: Platform Team
 name: Headlamp
 categories:
-  - cluster-management
+  - infrastructure
   - observability
 icon: https://raw.githubusercontent.com/kubernetes-sigs/headlamp/main/docs/headlamp_light.svg
 artifacts:
