@@ -248,8 +248,8 @@ sensitive inputs. They therefore take precedence when the same key appears in
 advanced YAML. The UI should explain this near the editor, and the backend must
 reject invalid YAML or a non-mapping root before Helm rendering.
 
-Argo CD is the canonical advanced-values example. Headlamp and MLflow currently
-use guided forms only.
+Argo CD and Headlamp are the canonical advanced-values examples. MLflow
+currently uses a guided form only.
 
 ## Sensitive values
 

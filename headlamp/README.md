@@ -28,8 +28,9 @@ access.
 1. Select an existing Kubernetes cluster.
 2. Keep the default release name and namespace, or enter DNS-compatible values.
 3. Choose `Read-only` or `Full cluster administration` access.
-4. Install the application and wait for the Helm release to become ready.
-5. Create a token for the Headlamp service account and use it on the sign-in
+4. Use **Customize values** only when you need settings outside the guided form.
+5. Install the application and wait for the Helm release to become ready.
+6. Create a token for the Headlamp service account and use it on the sign-in
    screen.
 
 For the default release and namespace:
@@ -40,6 +41,11 @@ kubectl -n headlamp create token headlamp
 
 The package does not enable service-account-token impersonation. Each user must
 authenticate, and the selected ClusterRole limits what that token can do.
+
+Advanced settings are stored as YAML overrides. The chart's `values.yaml` is
+the canonical reference shown by the editor; it is not copied into the form
+file. The guided cluster access role and the package's private-service defaults
+take precedence over advanced YAML.
 
 ## Usage
 

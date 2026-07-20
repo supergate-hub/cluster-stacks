@@ -14,6 +14,7 @@ components:
       releaseName: "${{ .parameters.releaseName }}"
       releaseNamespace: "${{ .parameters.releaseNamespace }}"
       createNamespace: true
+      rawValues: "${{ .parameters.rawValues }}"
       values:
         headlamp:
           clusterRoleBinding:
@@ -41,6 +42,10 @@ parameters:
     allowedValues:
       - view
       - cluster-admin
+  rawValues:
+    type: string
+    sensitive: true
+    description: Helm values YAML overrides from advanced configuration.
 
 ui:
   mapping:
@@ -49,3 +54,4 @@ ui:
     releaseName: general.appname
     releaseNamespace: general.namespace
     clusterRoleName: configuration.clusterRoleName
+    rawValues: setup.compose.data
