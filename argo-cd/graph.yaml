@@ -1,64 +1,26 @@
-releaseType: k8s
-components:
-  cluster:
-    type: existing_cluster
-    spec:
-      id: "${{ .parameters.clusterId }}"
-      name: "${{ .parameters.clusterName }}"
-
-  helmRelease:
-    type: helm_chart
-    spec:
-      clusterId: "${{ .components.cluster.state.id }}"
-      chartPath: chart
-      releaseName: "${{ .parameters.releaseName }}"
-      releaseNamespace: "${{ .parameters.releaseNamespace }}"
-      createNamespace: true
-      rawValues: "${{ .parameters.rawValues }}"
-      values:
-        adminPassword: "${{ .parameters.adminPassword }}"
-        dex:
-          enabled: false
-        notifications:
-          enabled: "${{ .parameters.notificationsEnabled }}"
-        server:
-          service:
-            type: ClusterIP
-    dependencies:
-      components:
-        cluster: {}
-
-parameters:
-  clusterId:
-    type: string
-    description: Existing Kubernetes cluster identifier.
-  clusterName:
-    type: string
-    description: Existing Kubernetes cluster name.
-  releaseName:
-    type: string
-    description: Helm release name.
-  releaseNamespace:
-    type: string
-    description: Helm release namespace.
-  adminPassword:
-    type: string
-    sensitive: true
-    description: Optional plaintext admin password; the chart stores only its bcrypt hash.
-  notificationsEnabled:
-    type: boolean
-    description: Whether to install the notifications controller.
-  rawValues:
-    type: string
-    sensitive: true
-    description: Helm values YAML overrides from advanced configuration.
-
-ui:
-  mapping:
-    clusterId: targetCluster.clusterId
-    clusterName: targetCluster.name
-    releaseName: general.appname
-    releaseNamespace: general.namespace
-    adminPassword: general.adminPassword
-    notificationsEnabled: configuration.notificationsEnabled
-    rawValues: setup.compose.data
+schemaVersion: 1
+engine: sveltos
+sveltos:
+  apiVersion: config.projectsveltos.io/v1beta1
+  syncMode: Continuous
+  driftDetection: false
+  healthChecks: false
+helm:
+  fixedValues:
+    dex.enabled: false
+    notifications.enabled: false
+    server.service.type: ClusterIP
+  valueMappings: {}
+lifecycle:
+  defaultDataPolicy: Delete
+  supportedDataPolicies:
+    - Delete
+  retainedResources: []
+access:
+  type: service-proxy
+  serviceNameTemplate: "${releaseName}-server"
+  servicePort: 80
+  credential:
+    source: target-secret
+    secretNameTemplate: "${releaseName}-initial-admin-secret"
+    secretKey: password

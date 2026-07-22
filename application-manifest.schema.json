@@ -73,7 +73,7 @@
     },
     "icon": {
       "type": "string",
-      "format": "uri"
+      "const": "icon.svg"
     },
     "artifacts": {
       "type": "object",

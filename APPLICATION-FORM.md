@@ -1,37 +1,32 @@
 # Application form contract
 
-Status: draft v1
+Status: v1
 
-`values.form.json` is the declarative installation-form contract for an
-application package. Application authors write this file; it is not generated
-from Helm `values.yaml`. The UI renders the form automatically after loading the
-file and the deployment backend maps the submitted values through `graph.yaml`.
-When an application exposes advanced Helm configuration, `chart/values.yaml`
-is the canonical editor reference and the form stores only the user's YAML
-overrides, never a copied snapshot of the full defaults.
+`values.form.json` is the catalog-owned, non-secret portion of an application
+installation form. Launcher renders it with `@gravity-ui/dynamic-forms` and its
+own visual adapters. It is JSON-Schema-inspired, but it is not JSON Schema.
 
-The format is based on
-[`@gravity-ui/dynamic-forms`](https://gravity-ui.com/libraries/dynamic-forms)
-and adds a small registry of platform-specific widgets. It is JSON
-Schema-inspired, but it is not a standard JSON Schema document.
+Launcher owns target cluster, release name, namespace, data policy, confirmation,
+and lifecycle controls outside this document. Package forms must never redefine
+those fields.
 
 ## Responsibilities
 
 | Concern | Owner |
 | --- | --- |
-| Available inputs, defaults, validation, and layout | Application package `values.form.json` |
-| Supported field and layout renderers | Launcher UI widget registry |
-| Mapping submitted values to typed parameters | Application package `graph.yaml` |
-| Mapping parameters to Helm values | Application package `graph.yaml` |
-| Redaction and transport of sensitive values | Launcher UI and deployment backend |
+| Application-specific inputs and safe defaults | `values.form.json` |
+| Form-to-Helm mapping and platform safeguards | `graph.yaml` |
+| Target, release name, namespace, and data policy | Launcher |
+| Secret generation and storage | Target-cluster chart/templates or an approved secret provider |
+| Helm execution and last-operation status | cluster-operator and Sveltos |
 
-An application package may use only widgets that are registered in the UI.
-Adding an arbitrary `viewSpec.type` to a package does not make that widget
-available automatically.
+The browser and Launcher backend never accept an application secret value. There
+is no password widget, secret widget, arbitrary YAML editor, or raw Helm values
+escape hatch in v1.
 
-## Base document
+## Document shape
 
-Every form is an object with ordered top-level sections:
+Every form is an ordered object of application-specific sections:
 
 ```json
 {
@@ -40,265 +35,97 @@ Every form is an object with ordered top-level sections:
   "defaultValue": {},
   "viewSpec": {
     "type": "base",
-    "order": ["targetCluster", "general", "configuration"]
+    "order": ["configuration"]
   },
   "properties": {}
 }
 ```
 
-The top-level section order should be:
-
-1. `targetCluster`
-2. `general`
-3. Application-specific sections
-
-`general` contains `appname` and `namespace`. Both must use a Kubernetes
-DNS-compatible validation pattern.
-
-## Data keywords
-
-The current contract supports these data keywords:
-
-| Keyword | Purpose |
-| --- | --- |
-| `type` | `object`, `string`, `number`, or `boolean`. |
-| `properties` | Child fields of an object. |
-| `required` | Field-level boolean requirement. |
-| `defaultValue` | Initial value displayed by the form. |
-| `enum` | Allowed values for a select field. |
-| `enumNames` | Display labels corresponding to `enum`. |
-| `pattern` | Regular expression for string validation. |
-| `patternError` | User-facing message when `pattern` fails. |
-| `minLength` | Minimum string length. |
-| `minimum` | Minimum numeric value. |
-
-Important differences from standard JSON Schema include:
-
-- `required` is a boolean on each field rather than an array on its parent.
-- `defaultValue` is used instead of `default`.
-- `viewSpec`, `patternError`, and `enumNames` are renderer extensions.
-
-A generic JSON Schema renderer will therefore not reproduce this form
-contract without an adapter.
+Supported data keywords are `type`, `properties`, `required`, `defaultValue`,
+`enum`, `enumNames`, `pattern`, `patternError`, `minLength`, and `minimum`.
+`required` is a field-level boolean and `defaultValue` is used instead of JSON
+Schema's `default`.
 
 ## View specification
 
-`viewSpec` controls how a field is rendered without changing its submitted
-value.
+Supported `viewSpec` properties are:
 
 | Property | Purpose |
 | --- | --- |
-| `type` | Selects a registered renderer. |
-| `layout` | Selects placement such as `section` or `row`. |
-| `layoutTitle` | Visible field or section title. |
-| `layoutDescription` | Help text displayed with the field. |
-| `order` | Defines child rendering order. |
-| `generateRandomValueButton` | Allows the UI to generate a random secret. |
-| `inputProps` | Supplies renderer-specific options for platform widgets. |
+| `type` | Selects one of the supported renderers below. |
+| `layout` | Uses `section` or `row` placement. |
+| `layoutTitle` | Visible section or field title. |
+| `layoutDescription` | Non-sensitive help text. |
+| `order` | Child rendering order. |
 
-### Required widget registry
+The v1 widget allowlist is intentionally small:
 
-The initial application packages require the following widgets:
-
-| `viewSpec.type` | Input/output | Contract |
+| `viewSpec.type` | Value | Usage |
 | --- | --- | --- |
-| `base` | Scalar or object | Default renderer used with `row` and `section` layouts. |
-| `cluster_select` | Object | Selects an existing cluster and returns `clusterId` and `name`. |
-| `select` | String | Renders the values declared by `enum` and optional `enumNames`. |
-| `switch` | Boolean | Renders a boolean toggle. |
-| `password` | String | Masks input; the mapped graph parameter must be sensitive. |
-| `yaml_input` | String | Opens the platform YAML editor and returns a YAML override document; the mapped graph parameter must be sensitive. |
+| `base` | object, string, or number | Sections and ordinary Launcher-styled inputs. |
+| `select` | string | One value from `enum`, with optional `enumNames`. |
+| `switch` | boolean | A non-sensitive toggle. |
 
-The UI must register these widgets before the corresponding application forms
-can be used.
+Any other widget fails catalog compilation. In particular, `password`,
+`yaml_input`, `cluster_select`, `inputProps`, and random-secret controls are not
+part of this contract.
 
-`cluster_select` is a platform widget. Its submitted value has this shape even
-though its child fields are not repeated in the application form:
+## Mapping to Helm values
 
-```json
-{
-  "clusterId": "cluster-identifier",
-  "name": "cluster-name"
-}
-```
-
-`yaml_input` is a Launcher platform widget, not a renderer supplied by
-`@gravity-ui/dynamic-forms`. The UI must register it explicitly. Its current
-`inputProps` contract is:
-
-| Property | Required | Purpose |
-| --- | --- | --- |
-| `sourcePath` | Yes | Application-relative path to the canonical Helm defaults. It must be `chart/values.yaml`. |
-| `editMode` | Yes | Must be `overrides`; the submitted string contains only user changes. |
-| `buttonText` | No | Label for the button that opens the editor. |
-| `dialogTitle` | No | Title displayed in the editor dialog. |
-| `description` | No | Help text shown in the editor. |
-
-The YAML field should default to an empty mapping (`"{}\n"`). The UI may show
-the canonical values as reference or autocomplete context, but it must not copy
-the entire file into form state. This keeps chart upgrades and editor defaults
-in sync.
-
-Example:
-
-```json
-{
-  "type": "string",
-  "required": true,
-  "defaultValue": "{}\n",
-  "viewSpec": {
-    "type": "yaml_input",
-    "layout": "row",
-    "layoutTitle": "Helm values",
-    "inputProps": {
-      "buttonText": "Customize values",
-      "sourcePath": "chart/values.yaml",
-      "editMode": "overrides"
-    }
-  }
-}
-```
-
-New widgets must define their input type, output shape, validation behavior,
-and sensitive-data behavior in this document before an application uses them.
-
-## Mapping to a deployment
-
-Form values are not passed directly to Helm. The data flow is:
-
-```text
-values.form.json
-  -> submitted form object
-  -> graph.yaml ui.mapping
-  -> typed graph parameters
-  -> helm_chart rawValues and structured values
-  -> packaged root chart
-```
-
-For example, the Headlamp form maps its selected access role as follows:
-
-```text
-configuration.clusterRoleName
-  -> clusterRoleName
-  -> headlamp.clusterRoleBinding.clusterRoleName
-```
-
-The MLflow administrator password follows the same mapping path, but its graph
-parameter is marked sensitive:
+`graph.yaml` maps form paths to reviewed Helm value paths:
 
 ```yaml
-parameters:
-  adminPassword:
-    type: string
-    sensitive: true
-
-ui:
-  mapping:
-    adminPassword: authentication.adminPassword
+schemaVersion: 1
+engine: sveltos
+sveltos:
+  apiVersion: config.projectsveltos.io/v1beta1
+  syncMode: Continuous
+  driftDetection: false
+  healthChecks: false
+helm:
+  fixedValues:
+    server.service.type: ClusterIP
+  valueMappings:
+    headlamp.clusterRoleBinding.clusterRoleName: configuration.clusterRoleName
 ```
 
-Every `ui.mapping` entry must satisfy all of these rules:
+The compiler combines only `helm.fixedValues` and validated `helm.valueMappings`.
+Unknown form paths, unknown submitted keys, type mismatches, and secret-like keys
+are rejected. Launcher persists the normalized result in
+`ApplicationInstallation.spec.values`; the operator adds only its reserved
+`launcher.dataPolicy` value before creating the Sveltos Profile.
 
-1. The source path exists in `values.form.json`, or is part of a registered
-   widget's documented output shape.
-2. The target parameter exists in `graph.yaml`.
-3. Field and parameter types match.
-4. A password or secret field maps to a parameter with `sensitive: true`.
-5. Every guided parameter that changes Helm values is explicitly mapped.
-6. Arbitrary Helm overrides are accepted only when the application explicitly
-   declares the `yaml_input` contract described below.
+Sveltos always uses `Continuous`. `ContinuousWithDriftDetection`, drift detection,
+automatic drift repair, health checks, and reloaders are outside v1. Installed
+means the last explicit Launcher operation succeeded; it is not runtime health.
 
-## Advanced Helm values
+## Secret policy
 
-Advanced Helm values are opt-in per application. A package that enables them
-must connect the YAML editor, a sensitive string parameter, and the Helm release
-explicitly:
+Secret-like field names include password, token, secret, credential, API key, and
+kubeconfig variants. Such fields are rejected at compile time and again at the
+Launcher API and CRD admission boundaries.
 
-```yaml
-components:
-  helmRelease:
-    type: helm_chart
-    spec:
-      rawValues: "${{ .parameters.rawValues }}"
-      values:
-        notifications:
-          enabled: "${{ .parameters.notificationsEnabled }}"
+When an application needs an initial credential, the chart creates or references
+it inside the target cluster. For example, the MLflow chart generates a random
+password on first install and preserves the existing Secret on update. Launcher
+may later expose a separately authorized credential-retrieval action, but it does
+not return credentials in catalog or installation DTOs.
 
-parameters:
-  rawValues:
-    type: string
-    sensitive: true
+## Compatibility and author checklist
 
-ui:
-  mapping:
-    rawValues: setup.compose.data
-```
+The catalog compiler publishes `schemaVersion: 1` plus a digest of the projected
+form. A field rename, type change, or renderer change is breaking and requires a
+new compatible catalog revision. Adding an optional allowlisted field is backward
+compatible.
 
-The deployment backend must parse `rawValues` as a YAML mapping and merge in
-this order, from lowest to highest precedence:
+Before submitting a package:
 
-```text
-chart/values.yaml defaults
-  < user rawValues overrides
-  < graph.yaml structured values
-```
+- Expose only reviewed application-specific values.
+- Keep target, release, namespace, and data policy out of the form.
+- Use safe non-secret defaults and the allowlisted widgets only.
+- Map every submitted field explicitly in `graph.yaml`.
+- Generate credentials inside the target cluster or use an approved provider.
+- Declare `Continuous` with drift detection and health checks disabled.
+- Commit every Helm dependency and run `./validate-applications.sh`.
 
-Structured values include guided settings, platform-required safeguards, and
-sensitive inputs. They therefore take precedence when the same key appears in
-advanced YAML. The UI should explain this near the editor, and the backend must
-reject invalid YAML or a non-mapping root before Helm rendering.
-
-Argo CD and Headlamp are the canonical advanced-values examples. MLflow
-currently uses a guided form only.
-
-## Sensitive values
-
-Sensitive fields must:
-
-- use the `password` widget or another registered secret widget;
-- have no committed default value;
-- map to a graph parameter with `sensitive: true`;
-- be redacted from logs, API responses, events, and deployment status;
-- be transmitted only to the component that creates the Helm release.
-
-Because arbitrary YAML may contain credentials, the entire `rawValues`
-parameter is sensitive even when its current content has no secrets. It follows
-the same redaction, transport, and retention rules as password parameters.
-
-The form schema controls presentation only. The UI and backend remain
-responsible for enforcing redaction and storage policy.
-
-## Compatibility and versioning
-
-The files currently implement the draft v1 contract without an explicit
-version field. Until version negotiation is implemented, the catalog reader
-must treat all `values.form.json` files as v1.
-
-Changes are classified as follows:
-
-- Adding an optional field or enum label is backward compatible.
-- Adding a widget requires the UI widget registry to be deployed first.
-- Renaming a field, changing its type, or changing a widget output is breaking.
-- Breaking changes require a new form-contract version and migration policy.
-
-The UI must pin a compatible `@gravity-ui/dynamic-forms` version. Application
-packages must not rely on renderer behavior that is absent from the documented
-contract.
-
-## Author checklist
-
-Before submitting an application form:
-
-- Keep cluster selection and general release fields first.
-- Expose only reviewed values required by the supported deployment profile.
-- Provide safe defaults for non-sensitive fields.
-- Use clear labels, descriptions, validation errors, and deterministic order.
-- Confirm every form output has a matching `graph.yaml` mapping.
-- Mark every secret parameter as sensitive.
-- Keep `chart/values.yaml` as the only full Helm-default source.
-- For `yaml_input`, submit overrides only and apply structured values last.
-- Commit `Chart.lock` and every declared chart dependency.
-- Run `./validate-applications.sh`.
-
-The existing Headlamp, Argo CD, and MLflow packages are the canonical v1
-examples.
+Headlamp, Argo CD, and MLflow are the canonical v1 examples.

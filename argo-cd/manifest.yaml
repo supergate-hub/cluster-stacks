@@ -5,7 +5,7 @@ name: Argo CD
 categories:
   - orchestration
   - development
-icon: https://argo-cd.readthedocs.io/en/stable/assets/logo.png
+icon: icon.svg
 artifacts:
   chartPath: chart
   chartVersion: "10.1.3"

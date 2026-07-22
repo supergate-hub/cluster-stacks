@@ -26,7 +26,7 @@ Declarative GitOps continuous delivery and drift reconciliation for Kubernetes.
 
 1. Select an existing Kubernetes cluster.
 2. Keep the default release name and namespace, or enter DNS-compatible values.
-3. Optionally set an administrator password and enable notifications.
+3. Optionally set an administrator password.
 4. Use **Customize values** only when you need settings outside the guided form.
 5. Install the application and wait for all Argo CD workloads to become ready.
 
@@ -44,8 +44,9 @@ form.
 
 Advanced settings are stored as YAML overrides. The chart's `values.yaml` is the
 canonical reference shown by the editor; it is not copied into the form file.
-Guided settings for the administrator password, notifications, Dex, and the
-private server service take precedence over advanced YAML.
+Guided settings for the administrator password, Dex, and the private server
+service take precedence over advanced YAML. The notifications controller stays
+disabled in the catalog package.
 
 ## Usage
 

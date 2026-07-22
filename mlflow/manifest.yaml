@@ -5,7 +5,7 @@ name: MLflow
 categories:
   - ai-ml
   - data
-icon: https://raw.githubusercontent.com/mlflow/mlflow/master/assets/logo.svg
+icon: icon.svg
 artifacts:
   chartPath: chart
   chartVersion: "1.11.2"

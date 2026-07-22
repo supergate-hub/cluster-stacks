@@ -13,7 +13,7 @@ elif [[ $# -gt 0 ]]; then
   exit 2
 fi
 
-for command in jq rg yq; do
+for command in jq rg yq python3; do
   if ! command -v "$command" >/dev/null 2>&1; then
     echo "missing required command: $command" >&2
     exit 1
@@ -105,95 +105,48 @@ validate_vendored_dependencies() {
   done < <(yq eval -r '.dependencies[] | [.name, .repository] | @tsv' "$chart_dir/Chart.yaml")
 }
 
-mapped_parameter_for() {
-  local graph_file="$1"
-  local field_path="$2"
-
-  FORM_FIELD_PATH="$field_path" yq eval -r \
-    '.ui.mapping | to_entries | .[] | select(.value == strenv(FORM_FIELD_PATH)) | .key' \
-    "$graph_file"
-}
-
 validate_form_security() {
   local application="$1"
   local package_dir="$2"
   local form_file="$package_dir/values.form.json"
   local graph_file="$package_dir/graph.yaml"
 
-  while IFS=$'\x1f' read -r field_path has_default; do
-    local parameter_name
+  if jq -e '
+    [paths(objects) as $path
+      | getpath($path)
+      | select(
+          (.viewSpec?.type? as $type
+            | $type != null and (["base", "select", "switch"] | index($type) | not))
+          or has("generateRandomValueButton")
+          or has("inputProps")
+        )
+    ] | length > 0
+  ' "$form_file" >/dev/null; then
+    fail "$application: form contains an unsupported or platform-owned widget"
+  fi
 
-    if [[ "$has_default" == "true" ]]; then
-      fail "$application: password field $field_path must not have a committed default"
-    fi
+  if jq -e '
+    [paths as $path
+      | select(($path | last | type) == "string")
+      | ($path | last)
+      | select(test("password|passwd|secret|token|credential|api.?key|kubeconfig|yaml_input|cluster_select|targetcluster|releasename|namespace|datapolicy"; "i"))
+    ] | length > 0
+  ' "$form_file" >/dev/null; then
+    fail "$application: form contains a secret-like or Launcher-owned field"
+  fi
 
-    parameter_name="$(mapped_parameter_for "$graph_file" "$field_path")"
-    if [[ -z "$parameter_name" || "$parameter_name" == *$'\n'* ]]; then
-      fail "$application: password field $field_path must map to exactly one graph parameter"
-    fi
-
-    if ! PARAMETER_NAME="$parameter_name" yq eval --exit-status \
-      '.parameters[strenv(PARAMETER_NAME)].type == "string" and
-       .parameters[strenv(PARAMETER_NAME)].sensitive == true' \
-      "$graph_file" >/dev/null; then
-      fail "$application: password parameter $parameter_name must be a sensitive string"
-    fi
-  done < <(jq -r '
-    paths(objects) as $path
-    | getpath($path) as $field
-    | select($field.viewSpec?.type? == "password")
-    | [
-        ($path | map(select(. != "properties")) | join(".")),
-        ($field | has("defaultValue") | tostring)
-      ]
-    | join("\u001f")
-  ' "$form_file")
-
-  while IFS=$'\x1f' read -r field_path source_path edit_mode; do
-    local parameter_name
-    local raw_values_reference
-    local expected_reference
-
-    if [[ "$source_path" != "chart/values.yaml" ]]; then
-      fail "$application: YAML editor $field_path must use chart/values.yaml as its source"
-    fi
-
-    if [[ ! -f "$package_dir/$source_path" ]]; then
-      fail "$application: YAML editor source does not exist: $source_path"
-    fi
-
-    if [[ "$edit_mode" != "overrides" ]]; then
-      fail "$application: YAML editor $field_path must use override mode"
-    fi
-
-    parameter_name="$(mapped_parameter_for "$graph_file" "$field_path")"
-    if [[ -z "$parameter_name" || "$parameter_name" == *$'\n'* ]]; then
-      fail "$application: YAML editor $field_path must map to exactly one graph parameter"
-    fi
-
-    if ! PARAMETER_NAME="$parameter_name" yq eval --exit-status \
-      '.parameters[strenv(PARAMETER_NAME)].type == "string" and
-       .parameters[strenv(PARAMETER_NAME)].sensitive == true' \
-      "$graph_file" >/dev/null; then
-      fail "$application: YAML override parameter $parameter_name must be a sensitive string"
-    fi
-
-    raw_values_reference="$(yq eval -r '.components.helmRelease.spec.rawValues' "$graph_file")"
-    expected_reference="\${{ .parameters.${parameter_name} }}"
-    if [[ "$raw_values_reference" != "$expected_reference" ]]; then
-      fail "$application: helmRelease.spec.rawValues must consume parameter $parameter_name"
-    fi
-  done < <(jq -r '
-    paths(objects) as $path
-    | getpath($path) as $field
-    | select($field.viewSpec?.type? == "yaml_input")
-    | [
-        ($path | map(select(. != "properties")) | join(".")),
-        ($field.viewSpec.inputProps.sourcePath // ""),
-        ($field.viewSpec.inputProps.editMode // "")
-      ]
-    | join("\u001f")
-  ' "$form_file")
+  if ! yq eval --exit-status '
+    .schemaVersion == 1 and
+    .engine == "sveltos" and
+    .sveltos.apiVersion == "config.projectsveltos.io/v1beta1" and
+    .sveltos.syncMode == "Continuous" and
+    .sveltos.driftDetection == false and
+    .sveltos.healthChecks == false and
+    (.helm.valueMappings | type == "!!map") and
+    (.lifecycle.supportedDataPolicies | length > 0)
+  ' "$graph_file" >/dev/null; then
+    fail "$application: graph must declare the fixed Sveltos Continuous/no-drift contract"
+  fi
 }
 
 jq empty "$repo_root/application-manifest.schema.json"
@@ -218,6 +171,7 @@ done
 
 required_files=(
   manifest.yaml
+  icon.svg
   README.md
   values.form.json
   graph.yaml
@@ -254,6 +208,7 @@ for application in "${applications[@]}"; do
   yq eval '.' "$package_dir/chart/values.yaml" >/dev/null
 
   if ! yq eval --exit-status '
+    .icon == "icon.svg" and
     .content.description == "README.md" and
     .content.form == "values.form.json" and
     .content.deployment == "graph.yaml" and
@@ -261,6 +216,22 @@ for application in "${applications[@]}"; do
     .artifacts.chartPath == "chart"
   ' "$package_dir/manifest.yaml" >/dev/null; then
     fail "$application: manifest content references do not match the package contract"
+  fi
+
+  icon_file="$package_dir/icon.svg"
+  icon_size="$(wc -c <"$icon_file" | tr -d ' ')"
+  if (( icon_size > 131072 )); then
+    fail "$application: icon.svg must be 128 KiB or smaller"
+  fi
+  if ! rg --quiet '<svg($|[[:space:]>])' "$icon_file"; then
+    fail "$application: icon.svg must contain an SVG root element"
+  fi
+  if rg --ignore-case --quiet \
+    '<script|<foreignObject|[[:space:]]on[a-z]+[[:space:]]*=' "$icon_file" || \
+    rg --ignore-case --quiet \
+      "(href|src)[[:space:]]*=[[:space:]]*['\"](https?:|//|data:)|url\\([[:space:]]*['\"]?(https?:|//|data:)" \
+      "$icon_file"; then
+    fail "$application: icon.svg contains active or external content"
   fi
 
   manifest_slug="$(yq eval -r '.slug' "$package_dir/manifest.yaml")"
@@ -312,6 +283,8 @@ for application in "${applications[@]}"; do
   echo "$application: structure valid"
 done
 
+python3 "$repo_root/test_catalog_release.py"
+
 if [[ "$structure_only" == true ]]; then
   exit 0
 fi
@@ -346,7 +319,6 @@ for application in "${applications[@]}"; do
       ;;
     argo-cd)
       template_arguments+=(
-        --set-string adminPassword=validation-password
         --set notifications.enabled=false
       )
       ;;
@@ -354,7 +326,6 @@ for application in "${applications[@]}"; do
       template_arguments+=(
         --set auth.enabled=true
         --set-string auth.adminUsername=admin
-        --set-string auth.adminPassword=validation-password
         --set-string postgresql.primary.persistence.size=8Gi
         --set-string minio.persistence.size=20Gi
       )

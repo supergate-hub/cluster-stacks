@@ -5,7 +5,7 @@ name: Headlamp
 categories:
   - infrastructure
   - observability
-icon: https://raw.githubusercontent.com/kubernetes-sigs/headlamp/main/docs/headlamp_light.svg
+icon: icon.svg
 artifacts:
   chartPath: chart
   chartVersion: "0.43.0"
